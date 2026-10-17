@@ -14,6 +14,7 @@ import { useSiteName } from "@/hooks/useSiteSettings";
 import { LoadingPanel } from "@/components/effects/HackerLoader";
 import { LottieIcon, preloadLottie } from "@/components/effects/LottieIcon";
 import { STICKERS } from "@/lib/stickers";
+import { usePrefetchUserData } from "@/hooks/usePrefetchUserData";
 
 export function Logo({ to = "/" }: { to?: "/" }) {
   const name = useSiteName();
@@ -92,6 +93,7 @@ function DockLink({ to, label, emoji }: (typeof NAV)[number]) {
 
 function CapsuleDock({ hidden }: { hidden: boolean }) {
   useEffect(() => { preloadLottie(NAV.map((n) => n.emoji)); }, []);
+  usePrefetchUserData();
   return (
     <nav
       aria-label="Main navigation"
