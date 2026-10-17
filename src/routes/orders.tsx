@@ -1,11 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { LottieIcon, preloadLottie } from "@/components/effects/LottieIcon";
 import { STICKERS } from "@/lib/stickers";
 import { AppShell, PageHeader, RequireAuth } from "@/components/AppShell";
-import { myBuilds } from "@/lib/builder.functions";
+import { myBuilds, userRebuild } from "@/lib/builder.functions";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { QueryFeedback } from "@/components/QueryFeedback";
@@ -41,6 +44,15 @@ function Orders() {
   useEffect(() => { preloadLottie([STICKERS.orders, STICKERS.download]); }, []);
   const fetchBuilds = useServerFn(myBuilds);
   const { data, isError, refetch } = useQuery({ queryKey: ["my-builds", user?.uid], queryFn: () => withRequestTimeout(() => fetchBuilds()), refetchInterval: 15000, retry: false });
+  const rebuildFn = useServerFn(userRebuild);
+  const canRebuild = useSiteSettings().data?.user_rebuild === true;
+  const [busy, setBusy] = useState<string | null>(null);
+  const rebuild = async (id: string) => {
+    setBusy(id);
+    try { await rebuildFn({ data: { id } }); toast.success("Rebuild started"); await refetch(); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Rebuild failed"); }
+    finally { setBusy(null); }
+  };
   if (!data) return <QueryFeedback label="your orders" failed={isError} retry={() => refetch()} />;
   if (!data.length)
     return (
@@ -70,6 +82,9 @@ function Orders() {
             <StatusBadge status={b.status} />
             {b.download && (
               <Button asChild size="sm" variant="hero"><a href={b.download}><LottieIcon src={STICKERS.download} className="size-5" /> APK</a></Button>
+            )}
+            {canRebuild && (b.status === "success" || b.status === "failed") && (
+              <Button size="sm" variant="outline" disabled={busy === b.id} onClick={() => rebuild(b.id)}><RefreshCw className={busy === b.id ? "size-4 animate-spin" : "size-4"} /> Rebuild</Button>
             )}
           </div>
         </div>

@@ -628,6 +628,8 @@ function SettingsTab({ pw }: { pw: string }) {
         <h2 className="font-semibold">Appearance</h2>
         <label className="flex items-center justify-between gap-3 text-sm font-medium" htmlFor="desktop-video">Desktop video background <Switch id="desktop-video" checked={v.desktop_video} onCheckedChange={(c) => setV({ ...v, desktop_video: c })} /></label>
         <p className="text-xs text-muted-foreground">On: Windows/Mac computers see the moving video on every page. Off: they see the normal image instead.</p>
+        <label className="flex items-center justify-between gap-3 text-sm font-medium" htmlFor="user-rebuild">Rebuild button in My Orders <Switch id="user-rebuild" checked={v.user_rebuild} onCheckedChange={(c) => setV({ ...v, user_rebuild: c })} /></label>
+        <p className="text-xs text-muted-foreground">On: users can rebuild their finished or failed apps for free. Off: the button is hidden.</p>
         {([["glass_desktop", "Card see-through on computers (Windows/Mac)"], ["glass_mobile", "Card see-through on phones & tablets (Android/iPhone)"]] as const).map(([k, label]) => (
           <div key={k} className="space-y-2">
             <div className="flex items-center justify-between text-sm"><span>{label}</span><span className="font-mono text-muted-foreground">{100 - v[k]}% clear</span></div>

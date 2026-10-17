@@ -134,6 +134,21 @@ export const userBuild = createServerFn({ method: "POST" })
     return { id, charged: t.price, ...res };
   });
 
+/** Free rebuild of the user's own finished/failed build; keeps package name and App ID. Admin can switch it off. */
+export const userRebuild = createServerFn({ method: "POST" })
+  .middleware([requireFirebaseAuth])
+  .inputValidator((d: { id: string }) => ({ id: uuid(d?.id) }))
+  .handler(async ({ data, context }) => {
+    const db = await adb();
+    const settings = await db.dbGet<{ user_rebuild?: boolean }>("settings/main");
+    if (settings?.user_rebuild === false) throw new Error("Rebuild is turned off right now");
+    const req = await db.dbGet<BuildRow>(`buildRequests/${data.id}`);
+    if (!req || req.user_id !== context.userId) throw new Error("Order not found");
+    if (!["success", "failed"].includes(String(req.status))) throw new Error(`Order is ${req.status}, please wait`);
+    const { dispatchBuild } = await import("@/lib/dispatch.server");
+    return dispatchBuild({ ...req, id: data.id });
+  });
+
 export const myBuilds = createServerFn({ method: "GET" })
   .middleware([requireFirebaseAuth])
   .handler(async ({ context }) => {
