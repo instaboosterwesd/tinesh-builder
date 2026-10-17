@@ -20,6 +20,9 @@
 - [x] Verify Windows video playback, signed-out navigation persistence, admin entry, and mobile image fallback. Account-only page checks remain unavailable until sign-in is configured.
 
 ## Current
+- [x] Compare manual-edit base with workflow APK; restore supplied Universal base, preserve protected archive entries, correct package authorities, run six regression tests and rebuild locally. Pushed apk-builder commit 4627dd7d36b7 and verified remote files.
+- [ ] Verify the latest signed workflow APK on Android and reproduce the user's exact failure. Blocked: failing signed APK/device error not supplied; local unsigned archive checks do not establish runtime success.
+- [x] Inspect supplied Universal APK and fix apk-builder patch scope, saved-ID requirement and preservation of unrelated text/assets; six regression tests passed. Real user new-build/rebuild runtime verification remains open above.
 - [x] Restrict every new build to random com.tineshmod.a1–com.tineshmod.a10; package input removed; six user/admin handler tests verify submitted overrides are ignored across all three bases and saved assignment reaches dispatch. Full suite: 16 tests pass.
 - [x] Inspect idforge-creations source and export its Firebase Realtime Database as a safe JSON deliverable.
 - [x] Fix Universal registration to use existing public Firebase rules without the unrelated service-account token; 11 tests pass and live create/read/delete verified with temporary record removed.

@@ -153,6 +153,14 @@ User writes Hinglish/Hindi; reply in simple Hindi. They want changes pushed dire
 - Profile: Help and Log out buttons centered (max-w-xs).
 
 ## Universal automatic registration (October 17, 2026)
+### Automatic APK investigation (October 17, 2026, 17:34 UTC)
+- User reports manual MT Manager edits work but automated workflow APKs malfunction. The repository Universal base differed from the supplied working APK: main/dialog and logo were already different and four level audio assets were absent. Restored bases/teacher.apk from the supplied APK byte-for-byte.
+- Universal patch now injects injector.html verbatim, changes only the existing appid value while preserving JSON formatting, requires stored ID for rebuilds, skips in-app logo and broad PNG conversions, and aligns package-scoped provider authorities without changing activity/application class names.
+- Added a post-compilation preservation pass: original DEX, sibling assets, audio and unrelated resources come from the original archive; only manifest, resource table, launcher PNGs, slex.json and injector.html use patched entries. Original compression metadata is retained; obsolete signatures are removed before workflow signing.
+- Six Python regression tests pass. Rebuilt the actual supplied APK locally with test name, icon, saved ID and HTML; all 66 DEX and unrelated entries are byte-identical, and compiled provider authorities follow the assigned package. This is an unsigned local structural test, NOT a phone runtime test or a real user new-build/rebuild verification.
+- Workflow still creates a fresh signing key for each build; upgrading an installed APK may fail without matching signing identity. Do not promise installation/runtime success from archive checks alone.
+- apk-builder changes pushed and remote file SHAs verified at commit 4627dd7d36b7, with backup-20261017-173804. Runtime verification remains blocked on a failing signed workflow APK and exact device symptom.
+
 - Reference source: instaboosterwesd/idforge-creations, downloaded for inspection without Git metadata. It uses yususj Realtime Database, not the builder's tineshfirebase database.
 - Source Add fields: Name, Deposit, Image, Telegram, Domain, Invite code; optional manual ID. Target record is apps/<id> with switch ON and those six fields under variables. New Universal builds must generate an ID automatically instead of asking users for one.
 - Universal build asks for register link plus optional Deposit/Telegram. App name and uploaded logo supply Name/Image; direct links split into Domain and Invite code, preserving hash-router formats and all query parameters.
