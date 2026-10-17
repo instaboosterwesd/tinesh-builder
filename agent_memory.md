@@ -132,3 +132,22 @@ Tests: `src/test/request-timeout.test.ts`, `src/test/profile-completion.test.ts`
 - Dashboard backgrounds re-uploaded to this project's CDN from reversebypass.store (dashboard-dark-bg.webp for dark, dashboard-light-bg.webp for light) via --page-wash in src/styles.css.
 - Top header (logo + wallet/login) shows only on the Home page (/); Wallet, Orders, Leaders, Profile etc. hide it (AppShell showHeader).
 - This remix has no secrets configured yet (Firebase service account, GitHub, ImgBB, Vercel, admin password). Keys pasted in chat should be rotated.
+
+## Remix session continued (October 17, 2026, evening)
+
+User writes Hinglish/Hindi; reply in simple Hindi. They want changes pushed directly without asking.
+
+### Repos and deploy (no credentials stored here)
+- Live site code repo: github.com/instaboosterwesd/tineshbuildercode (main). Vercel project `tineshbuildercode` auto-deploys it to https://tineshautomarketv1.vercel.app. Pushing here IS the Vercel update.
+- Mirror repo: github.com/instaboosterwesd/tinesh-builder (main) — push here too.
+- Build workflows repo: github.com/instaboosterwesd/apk-builder (private). Vercel env GITHUB_REPO points at it.
+- Sandbox blocks git checkout/commit/push; push via GitHub REST API (blobs → tree → commit → update ref) from a Python script, after creating a `backup-<timestamp>` branch. Tokens come from user-uploaded files at runtime only — never write them into the repo. Rotating the GitHub token and Firebase key the user pasted is advised.
+
+### Done this session
+- Header transparent with search centered in it; "Build your Android app" heading and "0 templates" line removed.
+- Scrolling down hides only the bottom navigation dock; header stays.
+- Desktop (min-width 1024px, fine pointer, no reduced motion) shows the looping video on every page incl. admin, mounted once in root; no image flash. Mobile/tablet keep theme image.
+- Faster page opens: QueryClient defaults (staleTime 30s, gcTime 10m, no focus refetch), router preload on intent, usePrefetchUserData in the dock warms wallet/orders/profile/leaderboard.
+- APK build failure fixed: Firebase Storage bucket does not exist (404), so upload-url failed. Workflows now upload APKs as GitHub release assets (tags build-<id>, enc-<id>), report path `release/<tag>/<file>.apk`; app serves HMAC-signed 24h links via /api/public/apk which redirects to the GitHub asset. Needs one real build to confirm.
+- Admin Settings → Appearance: desktop video on/off (off = image), card see-through sliders separately for computers (default 4% fill) and phones/tablets (default 20% fill). Stored in settings/main (desktop_video, glass_desktop, glass_mobile), applied via CSS vars on <html>.
+- Profile: Help and Log out buttons centered (max-w-xs).
