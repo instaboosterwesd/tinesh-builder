@@ -17,6 +17,7 @@ import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as TemplatesIdRouteImport } from './routes/templates.$id'
+import { Route as ApiPublicApkRouteImport } from './routes/api/public/apk'
 import { Route as ApiPublicBuildRouteImport } from './routes/api/public/build'
 
 const IndexRoute = IndexRouteImport.update({
@@ -59,6 +60,11 @@ const TemplatesIdRoute = TemplatesIdRouteImport.update({
   path: '/templates/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicApkRoute = ApiPublicApkRouteImport.update({
+  id: '/api/public/apk',
+  path: '/api/public/apk',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBuildRoute = ApiPublicBuildRouteImport.update({
   id: '/api/public/build',
   path: '/api/public/build',
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRoute
   '/templates/$id': typeof TemplatesIdRoute
+  '/api/public/apk': typeof ApiPublicApkRoute
   '/api/public/build': typeof ApiPublicBuildRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRoute
   '/templates/$id': typeof TemplatesIdRoute
+  '/api/public/apk': typeof ApiPublicApkRoute
   '/api/public/build': typeof ApiPublicBuildRoute
 }
 export interface FileRoutesById {
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRoute
   '/templates/$id': typeof TemplatesIdRoute
+  '/api/public/apk': typeof ApiPublicApkRoute
   '/api/public/build': typeof ApiPublicBuildRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/wallet'
     | '/templates/$id'
+    | '/api/public/apk'
     | '/api/public/build'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/wallet'
     | '/templates/$id'
+    | '/api/public/apk'
     | '/api/public/build'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/wallet'
     | '/templates/$id'
+    | '/api/public/apk'
     | '/api/public/build'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   WalletRoute: typeof WalletRoute
   TemplatesIdRoute: typeof TemplatesIdRoute
+  ApiPublicApkRoute: typeof ApiPublicApkRoute
   ApiPublicBuildRoute: typeof ApiPublicBuildRoute
 }
 
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TemplatesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/apk': {
+      id: '/api/public/apk'
+      path: '/api/public/apk'
+      fullPath: '/api/public/apk'
+      preLoaderRoute: typeof ApiPublicApkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/build': {
       id: '/api/public/build'
       path: '/api/public/build'
@@ -224,6 +244,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   WalletRoute: WalletRoute,
   TemplatesIdRoute: TemplatesIdRoute,
+  ApiPublicApkRoute: ApiPublicApkRoute,
   ApiPublicBuildRoute: ApiPublicBuildRoute,
 }
 export const routeTree = rootRouteImport

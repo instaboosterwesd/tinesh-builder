@@ -36,10 +36,40 @@ export function apkName(app: string) {
   return (app.replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "_") || "app") + ".apk";
 }
 
+/** APKs stored as GitHub release assets in the build repo: release/<tag>/<file>.apk */
+export const RELEASE_RE = /^release\/[\w-]{1,80}\/[\w-]{1,80}\.apk$/;
+
+export async function hmacHex(message: string): Promise<string> {
+  const secret = process.env["BUILD_CALLBACK_SECRET"] || "";
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function siteOrigin(): Promise<string> {
+  let url = process.env["BUILDER_URL"] || "";
+  if (!url) {
+    try {
+      const { getRequest } = await import("@tanstack/react-start/server");
+      url = new URL(getRequest().url).origin;
+    } catch {
+      /* ignore */
+    }
+  }
+  return url.replace(/\/$/, "");
+}
+
 /** Signed download URL for a storage path (null-safe). */
 export async function signPath(path: string | null | undefined, download?: string): Promise<string | null> {
   if (!path) return null;
   if (/^https:\/\/i\.ibb\.co\//.test(path)) return path;
+  if (RELEASE_RE.test(path)) {
+    const e = String(Math.floor(Date.now() / 1000) + 60 * 60 * 24);
+    const n = download ?? "";
+    const s = await hmacHex(`${path}|${e}|${n}`);
+    const q = new URLSearchParams({ p: path, e, n, s });
+    return `${await siteOrigin()}/api/public/apk?${q}`;
+  }
   const { storageSignUrl, dbGet } = await import("@/integrations/firebase/admin.server");
   if (LOGO_RE.test(path)) {
     const media = await dbGet<{ url: string }>(`mediaFiles/${path.replace(/\./g, "_")}`);

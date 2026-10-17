@@ -18,3 +18,7 @@
 - [x] Make the home header lighter and search fully transparent.
 - [x] Keep desktop video persistent across pages, including admin, without static-image flashes.
 - [x] Verify Windows video playback, signed-out navigation persistence, admin entry, and mobile image fallback. Account-only page checks remain unavailable until sign-in is configured.
+
+## Current
+- [ ] Fix failed APK build workflow in apk-builder repo
+- [ ] Transparent cards on Windows desktop

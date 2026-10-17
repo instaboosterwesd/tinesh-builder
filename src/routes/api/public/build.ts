@@ -1,6 +1,6 @@
 
 import { createFileRoute } from "@tanstack/react-router";
-import { signPath } from "@/lib/server-helpers";
+import { signPath, RELEASE_RE } from "@/lib/server-helpers";
 
 // Called by the GitHub Actions workflows (build + encrypt).
 // GET  ?id=<request_id>  -> returns template HTML + app info for the build
@@ -51,13 +51,13 @@ export const Route = createFileRoute("/api/public/build")({
           if (action === "encrypt-status") {
             if (!["encrypting", "encrypted", "encrypt_failed"].includes(status)) return json({ error: "Bad status" }, 400);
             const p = body["encrypted_apk_path"];
-            const ok = typeof p === "string" && /^encrypted-apks\/[\w-]+\.apk$/.test(p);
+            const ok = typeof p === "string" && (/^encrypted-apks\/[\w-]+\.apk$/.test(p) || RELEASE_RE.test(p));
             await db.dbUpdate(`buildRequests/${id}`, { encrypt_status: status, ...(ok ? { encrypted_apk_path: p } : {}), encrypt_log: log, updated_at: now });
             return json({ ok: true });
           }
           if (!["building", "success", "failed"].includes(status)) return json({ error: "Bad input" }, 400);
           const p = body["apk_path"];
-          const ok = typeof p === "string" && /^apks\/[\w-]+\.apk$/.test(p);
+          const ok = typeof p === "string" && (/^apks\/[\w-]+\.apk$/.test(p) || RELEASE_RE.test(p));
           await db.dbUpdate(`buildRequests/${id}`, { status, ...(ok ? { apk_path: p } : {}), build_log: log, updated_at: now });
           return json({ ok: true });
         } catch (e) {
