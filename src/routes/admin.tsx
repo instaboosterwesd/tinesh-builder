@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -622,6 +623,18 @@ function SettingsTab({ pw }: { pw: string }) {
         <h2 className="font-semibold">Payments</h2>
         <Input placeholder="UPI ID" value={v.upi_id} onChange={(e) => setV({ ...v, upi_id: e.target.value })} />
         <Input type="number" min={1} placeholder="Minimum deposit ₹" value={v.min_deposit} onChange={(e) => setV({ ...v, min_deposit: Number(e.target.value) })} />
+      </section>
+      <section className="surface space-y-4 p-5 lg:col-span-2">
+        <h2 className="font-semibold">Appearance</h2>
+        <label className="flex items-center justify-between gap-3 text-sm font-medium" htmlFor="desktop-video">Desktop video background <Switch id="desktop-video" checked={v.desktop_video} onCheckedChange={(c) => setV({ ...v, desktop_video: c })} /></label>
+        <p className="text-xs text-muted-foreground">On: Windows/Mac computers see the moving video on every page. Off: they see the normal image instead.</p>
+        {([["glass_desktop", "Card see-through on computers (Windows/Mac)"], ["glass_mobile", "Card see-through on phones & tablets (Android/iPhone)"]] as const).map(([k, label]) => (
+          <div key={k} className="space-y-2">
+            <div className="flex items-center justify-between text-sm"><span>{label}</span><span className="font-mono text-muted-foreground">{100 - v[k]}% clear</span></div>
+            <Slider aria-label={label} min={0} max={100} step={1} value={[100 - v[k]]} onValueChange={([x]) => setV({ ...v, [k]: 100 - (x ?? 0) })} />
+          </div>
+        ))}
+        <p className="text-xs text-muted-foreground">100% clear = fully transparent cards, 0% = solid cards.</p>
       </section>
       <section className="surface space-y-3 p-5 lg:col-span-2">
         <h2 className="font-semibold">Help & support link</h2>

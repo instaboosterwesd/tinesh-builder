@@ -252,13 +252,13 @@ function ProfileBody() {
         ))}
       </section>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="flex flex-col items-center gap-3">
         {settings?.support_link && (
-          <Button asChild variant="secondary" className="w-full">
+          <Button asChild variant="secondary" className="w-full max-w-xs">
             <a href={settings.support_link} target="_blank" rel="noreferrer"><LifeBuoy className="size-4" /> Help & Support</a>
           </Button>
         )}
-        <Button variant="destructive" className="w-full" onClick={onLogout}>
+        <Button variant="destructive" className="w-full max-w-xs" onClick={onLogout}>
           <LottieIcon src={STICKERS.logout} className="size-5" /> Log out
         </Button>
       </div>

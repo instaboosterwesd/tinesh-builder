@@ -11,7 +11,7 @@ function keyed<T extends object>(rec: Record<string, T> | null): (T & { id: stri
   return Object.entries(rec ?? {}).map(([id, v]) => ({ ...v, id }));
 }
 
-type Settings = SiteIdentity & { upi_id?: string; min_deposit?: number; maintenance_mode?: boolean; maintenance_message?: string; support_link?: string };
+type Settings = SiteIdentity & { upi_id?: string; min_deposit?: number; maintenance_mode?: boolean; maintenance_message?: string; support_link?: string; desktop_video?: boolean; glass_desktop?: number; glass_mobile?: number };
 type Deposit = { user_id: string; user_email?: string; amount: number; utr: string; status: string; created_at: string; updated_at?: string };
 type Tx = { amount: number; kind: string; note: string; created_at: string };
 
@@ -27,6 +27,9 @@ async function readSettings(db: Awaited<ReturnType<typeof adb>>) {
     maintenance_mode: data?.maintenance_mode ?? false,
     maintenance_message: data?.maintenance_message ?? "",
     support_link: data?.support_link ?? "",
+    desktop_video: data?.desktop_video ?? true,
+    glass_desktop: data?.glass_desktop ?? 4,
+    glass_mobile: data?.glass_mobile ?? 20,
   };
 }
 
@@ -36,11 +39,11 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(async (
   try {
     const db = await adb();
     const s = await readSettings(db);
-    return { site_name: s.site_name, announcement_enabled: s.announcement_enabled, announcement_title: s.announcement_title, announcement_message: s.announcement_message, maintenance_mode: s.maintenance_mode, maintenance_message: s.maintenance_message, support_link: s.support_link };
+    return { site_name: s.site_name, announcement_enabled: s.announcement_enabled, announcement_title: s.announcement_title, announcement_message: s.announcement_message, maintenance_mode: s.maintenance_mode, maintenance_message: s.maintenance_message, support_link: s.support_link, desktop_video: s.desktop_video, glass_desktop: s.glass_desktop, glass_mobile: s.glass_mobile };
   } catch (e) {
     // Public site must still render when the backend key is missing/invalid.
     console.error("getSiteSettings failed:", e instanceof Error ? e.message : e);
-    return { site_name: siteName(null), announcement_enabled: false, announcement_title: "", announcement_message: "", maintenance_mode: false, maintenance_message: "", support_link: "" };
+    return { site_name: siteName(null), announcement_enabled: false, announcement_title: "", announcement_message: "", maintenance_mode: false, maintenance_message: "", support_link: "", desktop_video: true, glass_desktop: 4, glass_mobile: 20 };
   }
 });
 
@@ -114,6 +117,9 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
       maintenance_mode: d?.["maintenance_mode"] === true,
       maintenance_message: str(d?.["maintenance_message"], "Maintenance message", 500, false),
       support_link: link,
+      desktop_video: d?.["desktop_video"] !== false,
+      glass_desktop: int(d?.["glass_desktop"] ?? 4, "desktop card opacity", 0, 100),
+      glass_mobile: int(d?.["glass_mobile"] ?? 20, "mobile card opacity", 0, 100),
     };
   })
   .handler(async ({ data }) => {

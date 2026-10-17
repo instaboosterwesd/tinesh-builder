@@ -20,5 +20,5 @@
 - [x] Verify Windows video playback, signed-out navigation persistence, admin entry, and mobile image fallback. Account-only page checks remain unavailable until sign-in is configured.
 
 ## Current
-- [ ] Fix failed APK build workflow in apk-builder repo
-- [ ] Transparent cards on Windows desktop
+- [x] Fix failed APK build workflow (needs one real build to confirm)
+- [x] Transparent cards on Windows desktop
