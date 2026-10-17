@@ -1,12 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createUniversalRegistration } from "@/lib/universal-registration.server";
 
-vi.mock("@/integrations/firebase/admin.server", () => ({ adminAccessToken: vi.fn(async () => "test-token") }));
 const input = { name: "My App", image: "https://i.ibb.co/example/logo.png", deposit: "100", telegram: "", registerLink: "https://example.com/register?inviteCode=ABC" };
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("Universal registration writes", () => {
-  it("reserves apps/<random ID> with the exact record and authenticates every request", async () => {
+  it("reserves apps/<random ID> with the exact record using existing public rules without an unrelated token", async () => {
     vi.stubEnv("UNIVERSAL_FIREBASE_SERVICE_ACCOUNT", "");
     const fetcher = vi.fn(async (_url: string, init?: RequestInit) => new Response(init?.method === "PUT" ? JSON.stringify({ ok: true }) : "null", { headers: { etag: '"null_etag"' } }));
     vi.stubGlobal("fetch", fetcher);
@@ -17,7 +16,7 @@ describe("Universal registration writes", () => {
     expect(write?.method).toBe("PUT");
     expect(JSON.parse(String(write?.body))).toEqual({ switch: "ON", variables: { name: "My App", image: input.image, deposit: "100", telegram: "", domain: "https://example.com/", invitecode: "register?inviteCode=ABC" } });
     expect(new Headers(write?.headers).get("if-match")).toBe('"null_etag"');
-    for (const [, init] of fetcher.mock.calls) expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer test-token");
+    for (const [, init] of fetcher.mock.calls) expect(new Headers(init?.headers).has("Authorization")).toBe(false);
   });
   it("does not overwrite an occupied app or bin ID", async () => {
     vi.stubEnv("UNIVERSAL_FIREBASE_SERVICE_ACCOUNT", "");
@@ -36,7 +35,7 @@ describe("Universal registration writes", () => {
     vi.stubEnv("UNIVERSAL_FIREBASE_SERVICE_ACCOUNT", "");
     const fetcher = vi.fn(async () => new Response("{}", { status: 401 }));
     vi.stubGlobal("fetch", fetcher);
-    await expect(createUniversalRegistration(input)).rejects.toThrow("authorized Firebase service account");
+    await expect(createUniversalRegistration(input)).rejects.toThrow("access was denied");
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 });

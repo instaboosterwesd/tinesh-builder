@@ -21,7 +21,8 @@
 
 ## Current
 - [x] Inspect idforge-creations source and export its Firebase Realtime Database as a safe JSON deliverable.
-- [ ] Universal inputs/formatter/automatic ID/Firebase writer implemented; real registration and APK flow blocked by missing authorized yususj service account (secure form declined). Tests cover formatting, package names, exact record, collision reservation and denied access.
+- [x] Fix Universal registration to use existing public Firebase rules without the unrelated service-account token; 11 tests pass and live create/read/delete verified with temporary record removed.
+- [ ] Verify full signed-in Universal APK flow. Blocked: preview has no templates to build; database registration itself is verified.
 - [x] Update contextual memory with Universal registration behavior and verification limits.
 - [x] Push tested source changes to tineshbuildercode/main and tinesh-builder/main; backup branches created and remote formatter contents verified. Vercel deployment and real Universal APK flow are not verified.
 - [x] Fix failed APK build workflow (needs one real build to confirm)

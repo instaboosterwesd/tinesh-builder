@@ -1,12 +1,13 @@
 import { REGISTRATION_DB, registrationId, registrationRecord } from "@/lib/universal-registration";
 import { importPKCS8, SignJWT } from "jose";
-import { adminAccessToken } from "@/integrations/firebase/admin.server";
 
 let cachedToken: { token: string; expires: number } | undefined;
 async function registrationAccessToken() {
   const raw = process.env["UNIVERSAL_FIREBASE_SERVICE_ACCOUNT"];
   if (!raw) {
-    return adminAccessToken();
+    // This separate database permits access through its existing public rules.
+    // Never send the unrelated app database's service-account token here.
+    return undefined;
   }
   if (cachedToken && cachedToken.expires > Date.now() + 60_000) return cachedToken.token;
   let account: { private_key: string; client_email: string };
@@ -31,10 +32,10 @@ async function registrationAccessToken() {
 async function request(path: string, init?: RequestInit) {
   const token = await registrationAccessToken();
   const response = await fetch(`${REGISTRATION_DB}/${path}.json`, {
-    ...init, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...init?.headers },
+    ...init, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), "Content-Type": "application/json", ...init?.headers },
     signal: AbortSignal.timeout(15_000),
   });
-  if ([401, 403].includes(response.status)) throw new Error("Universal registration needs an authorized Firebase service account. Contact support.");
+  if ([401, 403].includes(response.status)) throw new Error("Universal registration access was denied. Check Firebase rules or configure an authorized Universal service account.");
   if (!response.ok && response.status !== 412) throw new Error(`Universal registration database request failed [${response.status}]. Please try again.`);
   return response;
 }
