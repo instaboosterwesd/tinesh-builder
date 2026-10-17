@@ -1,0 +1,1 @@
+ALTER TABLE public.build_requests ADD COLUMN IF NOT EXISTS app_id text;

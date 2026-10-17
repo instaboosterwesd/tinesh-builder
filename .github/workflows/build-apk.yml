@@ -1,0 +1,58 @@
+# Triggered by the Builder admin panel when a build request is approved.
+# Repo secrets needed: BUILDER_URL (your published site URL), BUILD_CALLBACK_SECRET
+name: Build APK
+
+on:
+  repository_dispatch:
+    types: [build-apk]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      REQUEST_ID: ${{ github.event.client_payload.request_id }}
+      APP_NAME: ${{ github.event.client_payload.app_name }}
+      PACKAGE_NAME: ${{ github.event.client_payload.package_name }}
+    steps:
+      - name: Mark building
+        run: |
+          curl -s -X POST "${{ secrets.BUILDER_URL }}/api/public/build" \
+            -H "Content-Type: application/json" -H "x-build-secret: ${{ secrets.BUILD_CALLBACK_SECRET }}" \
+            -d "{\"id\":\"$REQUEST_ID\",\"status\":\"building\",\"log\":\"Runner started\"}"
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: android-actions/setup-android@v3
+
+      - name: Fetch template HTML
+        run: |
+          mkdir -p app/www
+          curl -s "${{ secrets.BUILDER_URL }}/api/public/build?id=$REQUEST_ID" \
+            -H "x-build-secret: ${{ secrets.BUILD_CALLBACK_SECRET }}" > payload.json
+          node -e "require('fs').writeFileSync('app/www/index.html', require('./payload.json').html)"
+
+      - name: Build with Capacitor
+        working-directory: app
+        run: |
+          npm init -y
+          npm i @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "$APP_NAME" "$PACKAGE_NAME" --web-dir www
+          npx cap add android
+          npx cap sync android
+          cd android && ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ env.REQUEST_ID }}
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Report result
+        if: always()
+        run: |
+          STATUS=${{ job.status == 'success' && 'success' || 'failed' }}
+          URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -s -X POST "${{ secrets.BUILDER_URL }}/api/public/build" \
+            -H "Content-Type: application/json" -H "x-build-secret: ${{ secrets.BUILD_CALLBACK_SECRET }}" \
+            -d "{\"id\":\"$REQUEST_ID\",\"status\":\"$STATUS\",\"apk_url\":\"$URL\",\"log\":\"Workflow $STATUS\"}"

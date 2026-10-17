@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791824813641,
+      "tag": "0000_add_app_id_to_build_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792199122485,
+      "tag": "0001_wallet_system",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792199698835,
+      "tag": "0002_create_app_users",
+      "breakpoints": true
+    }
+  ]
+}

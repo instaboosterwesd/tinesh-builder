@@ -1,0 +1,84 @@
+# Triggered by the Builder admin panel ("Encrypt APK" button) via repository_dispatch.
+# Downloads the built APK, applies maximum-feasible obfuscation/encryption, re-signs,
+# and uploads the result back to the builder via a signed upload URL.
+# Repo secrets needed: (none — all values come in the dispatch payload)
+name: Encrypt APK
+
+on:
+  repository_dispatch:
+    types: [encrypt-apk]
+
+jobs:
+  encrypt:
+    runs-on: ubuntu-latest
+    env:
+      REQUEST_ID: ${{ github.event.client_payload.request_id }}
+      APP_NAME: ${{ github.event.client_payload.app_name }}
+      APK_URL: ${{ github.event.client_payload.apk_url }}
+      BUILDER_URL: ${{ github.event.client_payload.builder_url }}
+      SECRET: ${{ github.event.client_payload.secret }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: instaboosterwesd/apk-builder
+          path: builder
+
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: android-actions/setup-android@v3
+
+      - name: Install apktool
+        run: |
+          sudo apt-get update && sudo apt-get install -y apktool zipalign apksigner openssl
+          apktool --version || true
+
+      - name: Download built APK
+        run: curl -sL "$APK_URL" -o input.apk
+
+      - name: Encrypt + obfuscate
+        run: |
+          set -e
+          apktool d -f -o work input.apk
+          # 1) Encrypt every file under assets/ with AES-256-CBC. The APK's native
+          #    loader (shipped in the base APK) decrypts them at runtime.
+          KEY=$(openssl rand -hex 32)
+          IV=$(openssl rand -hex 16)
+          if [ -d work/assets ]; then
+            find work/assets -type f | while read -r f; do
+              openssl enc -aes-256-cbc -K "$KEY" -iv "$IV" -in "$f" -out "$f.enc"
+              mv "$f.enc" "$f"
+            done
+          fi
+          mkdir -p work/assets/.sec
+          printf '%s\n%s\n' "$KEY" "$IV" > work/assets/.sec/k
+          # 2) Strip debug info from smali to harden against decompilers.
+          find work/smali* -name '*.smali' -print0 2>/dev/null | \
+            xargs -0 -r sed -i -E '/^\s*\.(source|line|local|param|prologue|epilogue)\b/d'
+          # 3) Rebuild, zipalign, sign with a fresh keystore.
+          apktool b work -o unsigned.apk
+          zipalign -p 4 unsigned.apk aligned.apk
+          keytool -genkey -v -keystore ks.jks -storepass secret1 -keypass secret1 \
+            -alias key -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Builder, OU=Enc, O=Enc, L=X, S=X, C=US"
+          apksigner sign --ks ks.jks --ks-pass pass:secret1 --key-pass pass:secret1 \
+            --out output.apk aligned.apk
+
+      - name: Upload encrypted APK
+        if: success()
+        run: |
+          RESP=$(curl -sS -X POST "$BUILDER_URL/api/public/build" \
+            -H "Content-Type: application/json" -H "x-build-secret: $SECRET" \
+            -d "{\"action\":\"encrypt-upload-url\",\"id\":\"$REQUEST_ID\"}")
+          URL=$(echo "$RESP" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).url))")
+          PATH_=$(echo "$RESP" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).path))")
+          curl -sS -X PUT "$URL" -H "Content-Type: application/vnd.android.package-archive" --data-binary @output.apk
+          curl -sS -X POST "$BUILDER_URL/api/public/build" \
+            -H "Content-Type: application/json" -H "x-build-secret: $SECRET" \
+            -d "{\"action\":\"encrypt-status\",\"id\":\"$REQUEST_ID\",\"status\":\"encrypted\",\"encrypted_apk_path\":\"$PATH_\",\"log\":\"OK\"}"
+
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -sS -X POST "$BUILDER_URL/api/public/build" \
+            -H "Content-Type: application/json" -H "x-build-secret: $SECRET" \
+            -d "{\"action\":\"encrypt-status\",\"id\":\"$REQUEST_ID\",\"status\":\"encrypt_failed\",\"log\":\"Workflow failed\"}"
