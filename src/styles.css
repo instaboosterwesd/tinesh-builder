@@ -12,6 +12,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -30,8 +31,12 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-gold: var(--gold);
+  --color-silver: var(--silver);
+  --color-bronze: var(--bronze);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -43,67 +48,279 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-glass-border: var(--glass-border);
+  --color-overlay: var(--overlay);
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.985 0.004 250);
+  --radius: 0.5rem;
+  /* Cards and glass panels stay generously rounded — never sharp corners. */
+  --radius-card: 1.5rem;
+  --dock-bg: color-mix(in oklab, var(--card) 72%, transparent);
+  --background: oklch(0.96 0.007 240);
   --foreground: oklch(0.2 0.025 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2 0.025 260);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2 0.025 260);
-  --primary: oklch(0.55 0.2 262);
-  --primary-glow: oklch(0.62 0.19 285);
-  --primary-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.58 0.2 255);
+  --primary-glow: oklch(0.7 0.16 200);
+  --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.955 0.008 255);
   --secondary-foreground: oklch(0.25 0.03 260);
   --muted: oklch(0.955 0.008 255);
   --muted-foreground: oklch(0.5 0.02 258);
-  --accent: oklch(0.94 0.03 262);
-  --accent-foreground: oklch(0.3 0.1 262);
+  --accent: oklch(0.94 0.035 250);
+  --accent-foreground: oklch(0.32 0.1 255);
   --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --success: oklch(0.62 0.16 150);
-  --warning: oklch(0.8 0.15 80);
-  --info: oklch(0.7 0.13 240);
-  --border: oklch(0.92 0.008 255);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.6 0.15 155);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.7 0.16 70);
+  --info: oklch(0.62 0.14 240);
+  --gold: oklch(0.78 0.15 85);
+  --silver: oklch(0.72 0.01 260);
+  --bronze: oklch(0.62 0.11 55);
+  --border: oklch(0.91 0.01 255);
   --input: oklch(0.9 0.01 255);
-  --ring: oklch(0.55 0.2 262);
-  --sidebar: oklch(0.15 0.009 20);
-  --sidebar-foreground: oklch(0.96 0.005 20);
-  --sidebar-primary: oklch(0.6 0.23 25);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.22 0.02 25);
-  --sidebar-accent-foreground: oklch(0.96 0.005 20);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.6 0.23 25);
+  --ring: oklch(0.58 0.2 255);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.25 0.025 260);
+  --sidebar-primary: oklch(0.58 0.2 255);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.02 250);
+  --sidebar-accent-foreground: oklch(0.3 0.1 255);
+  --sidebar-border: oklch(0.92 0.01 255);
+  --sidebar-ring: oklch(0.58 0.2 255);
   --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-glow));
-  --gradient-fade: linear-gradient(180deg, transparent, var(--background));
-  --shadow-glow: 0 8px 24px -8px color-mix(in oklab, var(--primary) 40%, transparent);
+  --gradient-card: linear-gradient(145deg, color-mix(in oklab, var(--primary) 92%, black), var(--primary-glow));
+  --shadow-glow: 0 10px 30px -10px color-mix(in oklab, var(--primary) 45%, transparent);
+  --shadow-clay: 8px 10px 24px -6px color-mix(in oklab, var(--primary) 18%, transparent), -6px -6px 16px oklch(1 0 0 / 0.9), inset 2px 2px 4px oklch(1 0 0 / 0.8), inset -3px -4px 8px color-mix(in oklab, var(--primary) 8%, transparent);
+  --shadow-clay-inset: inset 3px 3px 6px color-mix(in oklab, var(--foreground) 10%, transparent), inset -3px -3px 6px oklch(1 0 0 / 0.9);
+  --shadow-clay-btn: 0 8px 18px -6px color-mix(in oklab, var(--primary) 55%, transparent), inset 2px 3px 4px oklch(1 0 0 / 0.45), inset -3px -4px 6px oklch(0 0 0 / 0.18);
+  --shadow-soft: 0 1px 2px color-mix(in oklab, var(--foreground) 6%, transparent), 0 8px 24px -12px color-mix(in oklab, var(--foreground) 14%, transparent);
+  --glass-highlight: oklch(1 0 0 / 0.82);
+  --glass-border: oklch(1 0 0 / 0.8);
+  --glass-fill: color-mix(in oklab, var(--card) 32%, transparent);
+  --glass-field: color-mix(in oklab, var(--card) 20%, transparent);
+  --header-fill: color-mix(in oklab, var(--card) 8%, transparent);
+  --glass-dialog: color-mix(in oklab, var(--card) 86%, transparent);
+  --overlay: oklch(0.15 0.01 240 / 0.48);
+  --glass-sheen: linear-gradient(125deg, var(--glass-highlight), transparent 46%);
+  --page-wash: url("/__l5e/assets-v1/78710235-a354-4e1b-b10a-27fb62c99662/dashboard-light-bg.webp");
+  --shadow-glass: inset 0 1px 0 var(--glass-highlight), 0 12px 36px -20px color-mix(in oklab, var(--foreground) 22%, transparent);
+  --shadow-glass-button: inset 0 1px 0 var(--glass-highlight), 0 4px 12px -6px color-mix(in oklab, var(--foreground) 24%, transparent);
+  --hacker-ink: oklch(0.52 0.13 160);
+  --login-foreground: oklch(0.98 0 0);
+  --login-muted: oklch(0.8 0.015 255);
+  --login-fill: rgb(20 25 49 / 44%);
+  --login-border: oklch(1 0 0 / 20%);
+  --login-field: oklch(0.12 0.01 255 / 32%);
+  --login-overlay: linear-gradient(180deg, oklch(0.08 0.01 255 / 38%), oklch(0.08 0.01 255 / 65%));
+  --login-glow: oklch(0.65 0.22 305 / 24%);
+  --login-shadow: 0 24px 80px oklch(0 0 0 / 38%);
+}
+
+.dark {
+  --page-wash: url("/__l5e/assets-v1/b6c20e32-4399-41cf-9092-e5e94b496a87/dashboard-dark-bg.webp");
+  --background: oklch(0.17 0.006 240);
+  --dock-bg: color-mix(in oklab, var(--card) 75%, transparent);
+  --foreground: oklch(0.96 0.005 250);
+  --card: oklch(0.27 0.009 240);
+  --card-foreground: oklch(0.96 0.005 250);
+  --popover: oklch(0.22 0.018 260);
+  --popover-foreground: oklch(0.96 0.005 250);
+  --primary: oklch(0.68 0.17 250);
+  --primary-glow: oklch(0.76 0.14 195);
+  --primary-foreground: oklch(0.15 0.02 260);
+  --secondary: oklch(0.26 0.02 260);
+  --secondary-foreground: oklch(0.94 0.005 250);
+  --muted: oklch(0.25 0.018 260);
+  --muted-foreground: oklch(0.68 0.02 255);
+  --accent: oklch(0.28 0.04 255);
+  --accent-foreground: oklch(0.9 0.05 250);
+  --destructive: oklch(0.65 0.2 22);
+  --destructive-foreground: oklch(0.98 0 0);
+  --success: oklch(0.7 0.15 155);
+  --success-foreground: oklch(0.15 0.02 260);
+  --warning: oklch(0.8 0.15 80);
+  --info: oklch(0.72 0.12 240);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.68 0.17 250);
+  --sidebar: oklch(0.185 0.016 260);
+  --sidebar-foreground: oklch(0.94 0.005 250);
+  --sidebar-primary: oklch(0.68 0.17 250);
+  --sidebar-primary-foreground: oklch(0.15 0.02 260);
+  --sidebar-accent: oklch(0.26 0.03 255);
+  --sidebar-accent-foreground: oklch(0.94 0.005 250);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.68 0.17 250);
+  --shadow-clay: 8px 10px 24px -6px oklch(0 0 0 / 0.55), -4px -4px 14px oklch(1 0 0 / 0.04), inset 2px 2px 4px oklch(1 0 0 / 0.07), inset -3px -4px 8px oklch(0 0 0 / 0.35);
+  --shadow-clay-inset: inset 3px 3px 7px oklch(0 0 0 / 0.45), inset -2px -2px 5px oklch(1 0 0 / 0.05);
+  --shadow-clay-btn: 0 8px 18px -6px oklch(0 0 0 / 0.6), inset 2px 3px 4px oklch(1 0 0 / 0.35), inset -3px -4px 6px oklch(0 0 0 / 0.25);
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 30%), 0 8px 24px -12px oklch(0 0 0 / 50%);
+  --glass-highlight: oklch(1 0 0 / 0.12);
+  --glass-border: oklch(1 0 0 / 0.14);
+  --glass-fill: color-mix(in oklab, var(--card) 14%, transparent);
+  --glass-field: color-mix(in oklab, var(--background) 12%, transparent);
+  --glass-dialog: color-mix(in oklab, var(--card) 90%, transparent);
+  --overlay: oklch(0.08 0 0 / 0.58);
+  --shadow-glass: inset 0 1px 0 var(--glass-highlight), 0 14px 40px -22px oklch(0 0 0 / 0.65);
+  --shadow-glass-button: inset 0 1px 0 var(--glass-highlight), 0 4px 14px -6px oklch(0 0 0 / 0.5);
+  --hacker-ink: oklch(0.76 0.15 165);
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     background-color: var(--color-background);
+    background-image: var(--page-wash);
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100dvh;
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: 0;
+  }
 }
 
 @utility bg-gradient-primary { background-image: var(--gradient-primary); }
-@utility bg-gradient-fade { background-image: var(--gradient-fade); }
+@utility bg-gradient-card { background-image: var(--gradient-card); }
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
+@utility shadow-soft { box-shadow: var(--shadow-soft); }
 @utility text-gradient {
   background-image: var(--gradient-primary);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-@utility grid-bg {
-  background-image: linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 48px 48px;
+@utility pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0.5rem); }
+@utility surface {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--glass-border);
+  background-color: var(--glass-fill);
+  background-image: var(--glass-sheen);
+  backdrop-filter: blur(28px) saturate(170%);
+  box-shadow: var(--shadow-glass);
 }
+@utility glass-panel {
+  background-color: var(--glass-fill);
+  background-image: var(--glass-sheen);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(28px) saturate(170%);
+  box-shadow: var(--shadow-glass);
+}
+@utility glass-dialog {
+  background-color: var(--glass-dialog);
+  background-image: var(--glass-sheen);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(32px) saturate(135%);
+  box-shadow: var(--shadow-glass);
+}
+@utility glass-field {
+  background-color: var(--glass-field);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+  backdrop-filter: blur(12px);
+}
+/* Legacy class aliases preserve the same glass treatment on every existing view. */
+@utility clay { box-shadow: var(--shadow-glass); background-image: var(--glass-sheen); border: 1px solid var(--glass-border); backdrop-filter: blur(24px); }
+@utility clay-inset { box-shadow: inset 0 1px 0 var(--glass-highlight); border: 1px solid var(--glass-border); }
+@utility clay-btn { box-shadow: var(--shadow-glass-button); border: 1px solid var(--glass-border); }
+
+/* Floating capsule dock navigation */
+@utility capsule-dock {
+  border-radius: 9999px;
+  background-color: var(--dock-bg);
+  backdrop-filter: blur(20px) saturate(150%);
+  background-image: var(--glass-sheen);
+  box-shadow: var(--shadow-glass);
+}
+
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@utility dock-in {
+  animation: dock-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+
+.dark .capsule-dock {
+  border-color: color-mix(in oklab, var(--foreground) 16%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+.user-effects { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.dashboard-background { background-image: var(--page-wash); background-size: cover; background-position: center; background-repeat: no-repeat; }
+.app-content { position: relative; z-index: 1; }
+.home-header { background-color: var(--header-fill); backdrop-filter: blur(8px); }
+.home-search, .home-search-input, .dark .home-search-input {
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+@media (min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  body, .dashboard-background { background-image: none; }
+}
+.hacker-background { display: block; width: 100%; height: 100%; opacity: 0.23; }
+.splash-cursor { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.65; }
+.splash-cursor[data-contained] { position: absolute; }
+.splash-cursor__canvas { display: block; width: 100%; height: 100%; }
+.user-shell { position: relative; isolation: isolate; }
+.user-shell > header, .user-shell > main { position: relative; z-index: 2; }
+.user-shell > header { position: sticky; z-index: 40; }
+.login-screen { position: relative; isolation: isolate; color: var(--login-foreground); background-color: var(--background); background-image: var(--page-wash); background-attachment: fixed; background-size: cover; background-position: center; }
+.login-video, .login-video-overlay { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -2; }
+.login-video { object-fit: cover; }
+.login-video-overlay { background: var(--login-overlay); z-index: -1; }
+.login-card { position: relative; overflow: hidden; border-radius: 28px; background: var(--login-fill); border: 1px solid var(--login-border); backdrop-filter: blur(28px) saturate(170%); box-shadow: var(--login-shadow); }
+.login-card::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(280px circle at var(--pointer-x, 50%) var(--pointer-y, 30%), var(--login-glow), transparent 75%); opacity: 0; transition: opacity 200ms; }
+.login-card:hover::before { opacity: 1; }
+.login-card > * { position: relative; }
+.login-card input { background: var(--login-field); border-color: var(--login-border); color: var(--login-foreground); height: 46px; }
+.login-card input::placeholder { color: var(--login-muted); }
+.login-muted { color: var(--login-muted); }
+.login-alternate { background: var(--login-field); border-color: var(--login-border); color: var(--login-foreground); }
+@media (max-width: 480px) { .login-card { border-radius: 24px; } }
+@supports not (backdrop-filter: blur(1px)) {
+  .surface, .glass-panel, .glass-dialog, .capsule-dock { background-color: var(--card); }
+}
+
+/* Loading system: subtle shimmer skeletons + image fade-in */
+.skeleton-shimmer {
+  background-color: color-mix(in oklab, var(--foreground) 8%, transparent);
+  background-image: linear-gradient(100deg, transparent 30%, color-mix(in oklab, var(--foreground) 9%, transparent) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+.img-fade { opacity: 0; transition: opacity 200ms ease-out; }
+.img-fade.is-loaded { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .skeleton-shimmer { animation: none; } .img-fade { transition: none; } }
+
+/* The header stays pinned; only the bottom navigation slides away. */
+.auto-hide-dock { transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms ease; will-change: transform; }
+.auto-hide-dock[data-hidden] { transform: translateY(110%); opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .auto-hide-dock { transition: none; } }

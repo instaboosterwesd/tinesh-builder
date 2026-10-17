@@ -44,9 +44,29 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Media pointers (/__l5e/...) are shipped inside public/__l5e, so static hosting
+// (e.g. Vercel) serves them from the repo itself. This proxy is the fallback for
+// any pointer that has no local copy.
+const ASSET_ORIGIN = "https://ba135e1b-c2e0-4f8a-bfcd-d194076f3097.lovableproject.com";
+
+async function proxyAsset(request: Request): Promise<Response | null> {
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith("/__l5e/")) return null;
+  if (url.hostname.endsWith(".lovable.app") || url.hostname.endsWith(".lovableproject.com")) return null;
+  const headers = new Headers();
+  const range = request.headers.get("range");
+  if (range) headers.set("range", range);
+  const res = await fetch(ASSET_ORIGIN + url.pathname + url.search, { headers });
+  const out = new Headers(res.headers);
+  out.set("cache-control", "public, max-age=31536000, immutable");
+  return new Response(res.body, { status: res.status, headers: out });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const asset = await proxyAsset(request);
+      if (asset) return asset;
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

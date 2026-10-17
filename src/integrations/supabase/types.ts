@@ -14,30 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      app_users: {
-        Row: {
-          created_at: string
-          email: string
-          name: string
-          telegram_id: string
-          uid: string
-        }
-        Insert: {
-          created_at?: string
-          email?: string
-          name?: string
-          telegram_id?: string
-          uid: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          name?: string
-          telegram_id?: string
-          uid?: string
-        }
-        Relationships: []
-      }
       build_requests: {
         Row: {
           apk_path: string | null
@@ -45,6 +21,7 @@ export type Database = {
           app_id: string | null
           app_name: string
           build_log: string
+          charged: number
           created_at: string
           encrypt_log: string
           encrypt_status: string | null
@@ -60,6 +37,7 @@ export type Database = {
           template_id: string | null
           template_name: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           apk_path?: string | null
@@ -67,6 +45,7 @@ export type Database = {
           app_id?: string | null
           app_name: string
           build_log?: string
+          charged?: number
           created_at?: string
           encrypt_log?: string
           encrypt_status?: string | null
@@ -76,12 +55,13 @@ export type Database = {
           notes?: string
           package_name: string
           register_link?: string
-          requester_email: string
-          requester_name: string
+          requester_email?: string
+          requester_name?: string
           status?: string
           template_id?: string | null
           template_name?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           apk_path?: string | null
@@ -89,6 +69,7 @@ export type Database = {
           app_id?: string | null
           app_name?: string
           build_log?: string
+          charged?: number
           created_at?: string
           encrypt_log?: string
           encrypt_status?: string | null
@@ -104,6 +85,7 @@ export type Database = {
           template_id?: string | null
           template_name?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -121,9 +103,9 @@ export type Database = {
           created_at: string
           id: string
           status: string
-          uid: string
           updated_at: string
           user_email: string
+          user_id: string
           utr: string
         }
         Insert: {
@@ -131,9 +113,9 @@ export type Database = {
           created_at?: string
           id?: string
           status?: string
-          uid: string
           updated_at?: string
           user_email?: string
+          user_id: string
           utr?: string
         }
         Update: {
@@ -141,32 +123,86 @@ export type Database = {
           created_at?: string
           id?: string
           status?: string
-          uid?: string
           updated_at?: string
           user_email?: string
+          user_id?: string
           utr?: string
+        }
+        Relationships: []
+      }
+      login_history: {
+        Row: {
+          created_at: string
+          id: string
+          user_agent: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_agent?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_agent?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          telegram_id: string
+        }
+        Insert: {
+          avatar_url?: string
+          created_at?: string
+          email?: string
+          id: string
+          name?: string
+          telegram_id?: string
+        }
+        Update: {
+          avatar_url?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          telegram_id?: string
         }
         Relationships: []
       }
       settings: {
         Row: {
-          build_price: number
           id: number
+          maintenance_message: string
+          maintenance_mode: boolean
           min_deposit: number
+          support_link: string
           updated_at: string
           upi_id: string
         }
         Insert: {
-          build_price?: number
           id?: number
+          maintenance_message?: string
+          maintenance_mode?: boolean
           min_deposit?: number
+          support_link?: string
           updated_at?: string
           upi_id?: string
         }
         Update: {
-          build_price?: number
           id?: number
+          maintenance_message?: string
+          maintenance_mode?: boolean
           min_deposit?: number
+          support_link?: string
           updated_at?: string
           upi_id?: string
         }
@@ -182,6 +218,8 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          price: number
+          show_preview: boolean
           video_url: string | null
         }
         Insert: {
@@ -193,6 +231,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          price?: number
+          show_preview?: boolean
           video_url?: string | null
         }
         Update: {
@@ -204,28 +244,54 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          price?: number
+          show_preview?: boolean
           video_url?: string | null
+        }
+        Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          kind: string
+          note: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string
+          user_id?: string
         }
         Relationships: []
       }
       wallets: {
         Row: {
           balance: number
-          email: string
-          uid: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           balance?: number
-          email?: string
-          uid: string
           updated_at?: string
+          user_id: string
         }
         Update: {
           balance?: number
-          email?: string
-          uid?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -234,7 +300,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      wallet_change: {
+        Args: { _amount: number; _kind: string; _note: string; _user: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

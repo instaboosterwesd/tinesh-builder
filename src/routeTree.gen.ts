@@ -12,17 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as TrackRouteImport } from './routes/track'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as OrdersRouteImport } from './routes/orders'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as WalletRouteImport } from './routes/wallet'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminBuildRouteImport } from './routes/admin.build'
-import { Route as AdminDepositsRouteImport } from './routes/admin.deposits'
-import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
-import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
-import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as TemplatesIdRouteImport } from './routes/templates.$id'
-import { Route as AdminTemplatesIndexRouteImport } from './routes/admin.templates.index'
-import { Route as AdminTemplatesNewRouteImport } from './routes/admin.templates.new'
 import { Route as ApiPublicBuildRouteImport } from './routes/api/public/build'
 
 const IndexRoute = IndexRouteImport.update({
@@ -40,9 +34,19 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TrackRoute = TrackRouteImport.update({
-  id: '/track',
-  path: '/track',
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WalletRoute = WalletRouteImport.update({
@@ -50,50 +54,10 @@ const WalletRoute = WalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminBuildRoute = AdminBuildRouteImport.update({
-  id: '/build',
-  path: '/build',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminDepositsRoute = AdminDepositsRouteImport.update({
-  id: '/deposits',
-  path: '/deposits',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminRequestsRoute = AdminRequestsRouteImport.update({
-  id: '/requests',
-  path: '/requests',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSettingsRoute = AdminSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AdminRoute,
-} as any)
 const TemplatesIdRoute = TemplatesIdRouteImport.update({
   id: '/templates/$id',
   path: '/templates/$id',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AdminTemplatesIndexRoute = AdminTemplatesIndexRouteImport.update({
-  id: '/templates/',
-  path: '/templates/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminTemplatesNewRoute = AdminTemplatesNewRouteImport.update({
-  id: '/templates/new',
-  path: '/templates/new',
-  getParentRoute: () => AdminRoute,
 } as any)
 const ApiPublicBuildRoute = ApiPublicBuildRouteImport.update({
   id: '/api/public/build',
@@ -103,54 +67,37 @@ const ApiPublicBuildRoute = ApiPublicBuildRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/track': typeof TrackRoute
+  '/leaderboard': typeof LeaderboardRoute
+  '/orders': typeof OrdersRoute
+  '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRoute
-  '/admin/build': typeof AdminBuildRoute
-  '/admin/deposits': typeof AdminDepositsRoute
-  '/admin/requests': typeof AdminRequestsRoute
-  '/admin/settings': typeof AdminSettingsRoute
-  '/admin/users': typeof AdminUsersRoute
   '/templates/$id': typeof TemplatesIdRoute
-  '/admin/': typeof AdminIndexRoute
-  '/admin/templates/new': typeof AdminTemplatesNewRoute
   '/api/public/build': typeof ApiPublicBuildRoute
-  '/admin/templates/': typeof AdminTemplatesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/track': typeof TrackRoute
+  '/leaderboard': typeof LeaderboardRoute
+  '/orders': typeof OrdersRoute
+  '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRoute
-  '/admin/build': typeof AdminBuildRoute
-  '/admin/deposits': typeof AdminDepositsRoute
-  '/admin/requests': typeof AdminRequestsRoute
-  '/admin/settings': typeof AdminSettingsRoute
-  '/admin/users': typeof AdminUsersRoute
   '/templates/$id': typeof TemplatesIdRoute
-  '/admin': typeof AdminIndexRoute
-  '/admin/templates/new': typeof AdminTemplatesNewRoute
   '/api/public/build': typeof ApiPublicBuildRoute
-  '/admin/templates': typeof AdminTemplatesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
+  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
-  '/track': typeof TrackRoute
+  '/leaderboard': typeof LeaderboardRoute
+  '/orders': typeof OrdersRoute
+  '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRoute
-  '/admin/build': typeof AdminBuildRoute
-  '/admin/deposits': typeof AdminDepositsRoute
-  '/admin/requests': typeof AdminRequestsRoute
-  '/admin/settings': typeof AdminSettingsRoute
-  '/admin/users': typeof AdminUsersRoute
   '/templates/$id': typeof TemplatesIdRoute
-  '/admin/': typeof AdminIndexRoute
-  '/admin/templates/new': typeof AdminTemplatesNewRoute
   '/api/public/build': typeof ApiPublicBuildRoute
-  '/admin/templates/': typeof AdminTemplatesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -158,58 +105,43 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
-    | '/track'
+    | '/leaderboard'
+    | '/orders'
+    | '/profile'
     | '/wallet'
-    | '/admin/build'
-    | '/admin/deposits'
-    | '/admin/requests'
-    | '/admin/settings'
-    | '/admin/users'
     | '/templates/$id'
-    | '/admin/'
-    | '/admin/templates/new'
     | '/api/public/build'
-    | '/admin/templates/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/auth'
-    | '/track'
-    | '/wallet'
-    | '/admin/build'
-    | '/admin/deposits'
-    | '/admin/requests'
-    | '/admin/settings'
-    | '/admin/users'
-    | '/templates/$id'
     | '/admin'
-    | '/admin/templates/new'
+    | '/auth'
+    | '/leaderboard'
+    | '/orders'
+    | '/profile'
+    | '/wallet'
+    | '/templates/$id'
     | '/api/public/build'
-    | '/admin/templates'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/auth'
-    | '/track'
+    | '/leaderboard'
+    | '/orders'
+    | '/profile'
     | '/wallet'
-    | '/admin/build'
-    | '/admin/deposits'
-    | '/admin/requests'
-    | '/admin/settings'
-    | '/admin/users'
     | '/templates/$id'
-    | '/admin/'
-    | '/admin/templates/new'
     | '/api/public/build'
-    | '/admin/templates/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRouteWithChildren
+  AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
-  TrackRoute: typeof TrackRoute
+  LeaderboardRoute: typeof LeaderboardRoute
+  OrdersRoute: typeof OrdersRoute
+  ProfileRoute: typeof ProfileRoute
   WalletRoute: typeof WalletRoute
   TemplatesIdRoute: typeof TemplatesIdRoute
   ApiPublicBuildRoute: typeof ApiPublicBuildRoute
@@ -238,11 +170,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/track': {
-      id: '/track'
-      path: '/track'
-      fullPath: '/track'
-      preLoaderRoute: typeof TrackRouteImport
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/wallet': {
@@ -252,68 +198,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WalletRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/build': {
-      id: '/admin/build'
-      path: '/build'
-      fullPath: '/admin/build'
-      preLoaderRoute: typeof AdminBuildRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/deposits': {
-      id: '/admin/deposits'
-      path: '/deposits'
-      fullPath: '/admin/deposits'
-      preLoaderRoute: typeof AdminDepositsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/requests': {
-      id: '/admin/requests'
-      path: '/requests'
-      fullPath: '/admin/requests'
-      preLoaderRoute: typeof AdminRequestsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/settings': {
-      id: '/admin/settings'
-      path: '/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AdminSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/templates/$id': {
       id: '/templates/$id'
       path: '/templates/$id'
       fullPath: '/templates/$id'
       preLoaderRoute: typeof TemplatesIdRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/admin/templates/': {
-      id: '/admin/templates/'
-      path: '/templates'
-      fullPath: '/admin/templates/'
-      preLoaderRoute: typeof AdminTemplatesIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/templates/new': {
-      id: '/admin/templates/new'
-      path: '/templates/new'
-      fullPath: '/admin/templates/new'
-      preLoaderRoute: typeof AdminTemplatesNewRouteImport
-      parentRoute: typeof AdminRoute
     }
     '/api/public/build': {
       id: '/api/public/build'
@@ -325,35 +215,13 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminRouteChildren {
-  AdminBuildRoute: typeof AdminBuildRoute
-  AdminDepositsRoute: typeof AdminDepositsRoute
-  AdminRequestsRoute: typeof AdminRequestsRoute
-  AdminSettingsRoute: typeof AdminSettingsRoute
-  AdminUsersRoute: typeof AdminUsersRoute
-  AdminIndexRoute: typeof AdminIndexRoute
-  AdminTemplatesNewRoute: typeof AdminTemplatesNewRoute
-  AdminTemplatesIndexRoute: typeof AdminTemplatesIndexRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminBuildRoute: AdminBuildRoute,
-  AdminDepositsRoute: AdminDepositsRoute,
-  AdminRequestsRoute: AdminRequestsRoute,
-  AdminSettingsRoute: AdminSettingsRoute,
-  AdminUsersRoute: AdminUsersRoute,
-  AdminIndexRoute: AdminIndexRoute,
-  AdminTemplatesNewRoute: AdminTemplatesNewRoute,
-  AdminTemplatesIndexRoute: AdminTemplatesIndexRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRouteWithChildren,
+  AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
-  TrackRoute: TrackRoute,
+  LeaderboardRoute: LeaderboardRoute,
+  OrdersRoute: OrdersRoute,
+  ProfileRoute: ProfileRoute,
   WalletRoute: WalletRoute,
   TemplatesIdRoute: TemplatesIdRoute,
   ApiPublicBuildRoute: ApiPublicBuildRoute,

@@ -12,4 +12,9 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    // Pre-bundle the lazily imported emoji player so dev never re-optimizes mid-session
+    // (a re-optimize loads a second React copy and crashes hooks).
+    optimizeDeps: { include: ["lottie-web/build/player/lottie_light"] },
+  },
 });

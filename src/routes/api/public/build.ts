@@ -1,5 +1,6 @@
-import "@/lib/server-env";
+
 import { createFileRoute } from "@tanstack/react-router";
+import { signPath } from "@/lib/server-helpers";
 
 // Called by the GitHub Actions workflows (build + encrypt).
 // GET  ?id=<request_id>  -> returns template HTML + app info for the build
@@ -16,7 +17,7 @@ function authorized(request: Request) {
   return !!secret && request.headers.get("x-build-secret") === secret;
 }
 
-const isUuid = (s: unknown): s is string => typeof s === "string" && /^[0-9a-f-]{36}$/i.test(s);
+const isUuid = (s: unknown): s is string => typeof s === "string" && /^[\w-]{6,64}$/.test(s);
 
 export const Route = createFileRoute("/api/public/build")({
   server: {
@@ -24,70 +25,45 @@ export const Route = createFileRoute("/api/public/build")({
       GET: async ({ request }) => {
         if (!authorized(request)) return json({ error: "Unauthorized" }, 401);
         const id = new URL(request.url).searchParams.get("id") ?? "";
-        const { getAdminClient } = await import("@/lib/admin-client");
-        const supabaseAdmin = await getAdminClient();
-        const { data: req } = await supabaseAdmin.from("build_requests").select("*").eq("id", id).maybeSingle();
+        if (!isUuid(id)) return json({ error: "Bad id" }, 400);
+        const db = await import("@/integrations/firebase/admin.server");
+        const req = await db.dbGet<Record<string, string | null>>(`buildRequests/${id}`);
         if (!req) return json({ error: "Not found" }, 404);
-        const { data: t } = await supabaseAdmin.from("templates").select("base_apk, html").eq("id", req.template_id ?? "").maybeSingle();
-        let logo_url: string | null = null;
-        if (req.logo_path) {
-          const { data } = await supabaseAdmin.storage.from("media").createSignedUrl(req.logo_path, 3600);
-          logo_url = data?.signedUrl ?? null;
-        }
-        return json({ app_name: req.app_name, package_name: req.package_name, register_link: req.register_link, logo_url, base_apk: t?.base_apk ?? "bingo", html: t?.html ?? "", app_id: req.app_id ?? null });
+        const t = req["template_id"] ? await db.dbGet<{ base_apk?: string; html?: string }>(`templates/${req["template_id"]}`) : null;
+        const logo_url = await signPath(req["logo_path"]);
+        return json({ app_name: req["app_name"], package_name: req["package_name"], register_link: req["register_link"], logo_url, base_apk: t?.base_apk ?? "bingo", html: t?.html ?? "", app_id: req["app_id"] ?? null });
       },
       POST: async ({ request }) => {
         if (!authorized(request)) return json({ error: "Unauthorized" }, 401);
         const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-        const { getAdminClient } = await import("@/lib/admin-client");
-        const sb = await getAdminClient();
+        const db = await import("@/integrations/firebase/admin.server");
         const action = body["action"];
-
-        if (action === "upload-url" && isUuid(body["id"])) {
-          const path = `apks/${body["id"]}-${Date.now()}.apk`;
-          const { data, error } = await sb.storage.from("media").createSignedUploadUrl(path);
-          if (error) return json({ error: error.message }, 500);
-          return json({ path, url: data.signedUrl });
-        }
-
-        if (action === "encrypt-upload-url" && isUuid(body["id"])) {
-          const path = `encrypted-apks/${body["id"]}-${Date.now()}.apk`;
-          const { data, error } = await sb.storage.from("media").createSignedUploadUrl(path);
-          if (error) return json({ error: error.message }, 500);
-          return json({ path, url: data.signedUrl });
-        }
-
-        if (action === "encrypt-status" && isUuid(body["id"])) {
-          const allowed = ["encrypting", "encrypted", "encrypt_failed"];
+        const id = body["id"];
+        if (!isUuid(id)) return json({ error: "Bad id" }, 400);
+        const now = new Date().toISOString();
+        try {
+          if (action === "upload-url" || action === "encrypt-upload-url") {
+            const path = `${action === "upload-url" ? "apks" : "encrypted-apks"}/${id}-${Date.now()}.apk`;
+            return json({ path, url: await db.storageCreateUploadUrl(path, "application/vnd.android.package-archive") });
+          }
+          const log = typeof body["log"] === "string" ? body["log"].slice(0, 2000) : "";
           const status = String(body["status"] ?? "");
-          if (!allowed.includes(status)) return json({ error: "Bad status" }, 400);
-          const encPath = typeof body["encrypted_apk_path"] === "string" && /^encrypted-apks\/[\w-]+\.apk$/.test(body["encrypted_apk_path"])
-            ? body["encrypted_apk_path"] : undefined;
-          const { error } = await sb.from("build_requests").update({
-            encrypt_status: status,
-            ...(encPath ? { encrypted_apk_path: encPath } : {}),
-            encrypt_log: typeof body["log"] === "string" ? body["log"].slice(0, 2000) : "",
-            updated_at: new Date().toISOString(),
-          }).eq("id", body["id"]);
-          if (error) return json({ error: error.message }, 500);
+          if (action === "encrypt-status") {
+            if (!["encrypting", "encrypted", "encrypt_failed"].includes(status)) return json({ error: "Bad status" }, 400);
+            const p = body["encrypted_apk_path"];
+            const ok = typeof p === "string" && /^encrypted-apks\/[\w-]+\.apk$/.test(p);
+            await db.dbUpdate(`buildRequests/${id}`, { encrypt_status: status, ...(ok ? { encrypted_apk_path: p } : {}), encrypt_log: log, updated_at: now });
+            return json({ ok: true });
+          }
+          if (!["building", "success", "failed"].includes(status)) return json({ error: "Bad input" }, 400);
+          const p = body["apk_path"];
+          const ok = typeof p === "string" && /^apks\/[\w-]+\.apk$/.test(p);
+          await db.dbUpdate(`buildRequests/${id}`, { status, ...(ok ? { apk_path: p } : {}), build_log: log, updated_at: now });
           return json({ ok: true });
+        } catch (e) {
+          console.error(e);
+          return json({ error: "Server error" }, 500);
         }
-
-        // Default: build status update
-        const allowed = ["building", "success", "failed"];
-        const status = String(body["status"] ?? "");
-        if (!allowed.includes(status) || !isUuid(body["id"])) return json({ error: "Bad input" }, 400);
-        const { error } = await sb
-          .from("build_requests")
-          .update({
-            status,
-            ...(typeof body["apk_path"] === "string" && /^apks\/[\w-]+\.apk$/.test(body["apk_path"]) ? { apk_path: body["apk_path"] } : {}),
-            build_log: typeof body["log"] === "string" ? body["log"].slice(0, 2000) : "",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", body["id"]);
-        if (error) return json({ error: error.message }, 500);
-        return json({ ok: true });
       },
     },
   },

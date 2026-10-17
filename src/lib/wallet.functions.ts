@@ -1,113 +1,126 @@
-import "@/lib/server-env";
 import { createServerFn } from "@tanstack/react-start";
+import { requireFirebaseAuth } from "@/integrations/firebase/auth-middleware";
+import { checkPassword, int, str, walletChange } from "@/lib/server-helpers";
+import { siteName, validateSiteIdentity, type SiteIdentity } from "@/lib/site-settings";
 
-async function admin() {
-  const { getAdminClient } = await import("@/lib/admin-client");
-  return getAdminClient();
+async function adb() {
+  return import("@/integrations/firebase/admin.server");
 }
 
-function checkPassword(password: unknown) {
-  const expected = process.env["ADMIN_PASSWORD"] || "devdev";
-  if (typeof password !== "string" || password !== expected) {
-    throw new Error("Unauthorized: wrong admin password");
+function keyed<T extends object>(rec: Record<string, T> | null): (T & { id: string })[] {
+  return Object.entries(rec ?? {}).map(([id, v]) => ({ ...v, id }));
+}
+
+type Settings = SiteIdentity & { upi_id?: string; min_deposit?: number; maintenance_mode?: boolean; maintenance_message?: string; support_link?: string };
+type Deposit = { user_id: string; user_email?: string; amount: number; utr: string; status: string; created_at: string; updated_at?: string };
+type Tx = { amount: number; kind: string; note: string; created_at: string };
+
+async function readSettings(db: Awaited<ReturnType<typeof adb>>) {
+  const data = await db.dbGet<Settings>("settings/main");
+  return {
+    site_name: siteName(data),
+    announcement_enabled: data?.announcement_enabled ?? false,
+    announcement_title: data?.announcement_title ?? "",
+    announcement_message: data?.announcement_message ?? "",
+    upi_id: data?.upi_id ?? "",
+    min_deposit: data?.min_deposit ?? 100,
+    maintenance_mode: data?.maintenance_mode ?? false,
+    maintenance_message: data?.maintenance_message ?? "",
+    support_link: data?.support_link ?? "",
+  };
+}
+
+/* ---------- Public ---------- */
+
+export const getSiteSettings = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const db = await adb();
+    const s = await readSettings(db);
+    return { site_name: s.site_name, announcement_enabled: s.announcement_enabled, announcement_title: s.announcement_title, announcement_message: s.announcement_message, maintenance_mode: s.maintenance_mode, maintenance_message: s.maintenance_message, support_link: s.support_link };
+  } catch (e) {
+    // Public site must still render when the backend key is missing/invalid.
+    console.error("getSiteSettings failed:", e instanceof Error ? e.message : e);
+    return { site_name: siteName(null), announcement_enabled: false, announcement_title: "", announcement_message: "", maintenance_mode: false, maintenance_message: "", support_link: "" };
   }
-}
+});
 
-function str(v: unknown, field: string, max = 500, required = true): string {
-  const s = typeof v === "string" ? v.trim() : "";
-  if (required && !s) throw new Error(`${field} is required`);
-  if (s.length > max) throw new Error(`${field} is too long`);
-  return s;
-}
-
-function uid(v: unknown): string {
-  const s = str(v, "User", 128);
-  if (!/^[A-Za-z0-9_-]{6,128}$/.test(s)) throw new Error("Invalid user");
-  return s;
-}
-
-type Settings = { upi_id: string; min_deposit: number; build_price: number };
-
-async function readSettings(db: Awaited<ReturnType<typeof admin>>): Promise<Settings> {
-  const { data } = await db.from("settings").select("upi_id, min_deposit, build_price").eq("id", 1).maybeSingle();
-  return { upi_id: data?.upi_id ?? "", min_deposit: data?.min_deposit ?? 100, build_price: data?.build_price ?? 0 };
-}
-
-/* ---------- User side ---------- */
+/* ---------- Signed-in user ---------- */
 
 export const getWalletInfo = createServerFn({ method: "GET" })
-  .inputValidator((d: { uid: string }) => ({ uid: uid(d?.["uid"]) }))
-  .handler(async ({ data }) => {
-    const db = await admin();
+  .middleware([requireFirebaseAuth])
+  .handler(async ({ context }) => {
+    const db = await adb();
     const settings = await readSettings(db);
-    const { data: w } = await db.from("wallets").select("balance").eq("uid", data.uid).maybeSingle();
-    const { data: deps } = await db
-      .from("deposit_requests")
-      .select("id, amount, utr, status, created_at")
-      .eq("uid", data.uid)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    return { balance: w?.balance ?? 0, settings, deposits: deps ?? [] };
+    const [balance, deps, tx] = await Promise.all([
+      db.dbGet<number>(`wallets/${context.userId}/balance`),
+      db.dbGet<Record<string, Deposit>>("deposits"),
+      db.dbGet<Record<string, Tx>>(`walletTransactions/${context.userId}`),
+    ]);
+    const myDeps = keyed(deps)
+      .filter((d) => d.user_id === context.userId)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, 30);
+    const myTx = keyed(tx).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 30);
+    return {
+      balance: balance ?? 0,
+      upi_id: settings.upi_id,
+      min_deposit: settings.min_deposit,
+      support_link: settings.support_link,
+      deposits: myDeps,
+      transactions: myTx,
+    };
   });
 
 export const requestDeposit = createServerFn({ method: "POST" })
+  .middleware([requireFirebaseAuth])
   .inputValidator((d: Record<string, unknown>) => {
-    const amount = Number(d?.["amount"]);
-    if (!Number.isInteger(amount) || amount < 1 || amount > 1_000_000) throw new Error("Invalid amount");
-    return {
-      uid: uid(d?.["uid"]),
-      email: str(d?.["email"], "Email", 255),
-      amount,
-      utr: str(d?.["utr"], "UTR / transaction reference", 64),
-    };
+    const utr = str(d?.["utr"], "UTR", 64);
+    if (!/^[A-Za-z0-9]{6,64}$/.test(utr)) throw new Error("Enter a valid UTR / transaction ID");
+    return { amount: int(d?.["amount"], "amount", 1, 1_000_000), utr };
   })
-  .handler(async ({ data }) => {
-    const db = await admin();
+  .handler(async ({ data, context }) => {
+    const db = await adb();
     const settings = await readSettings(db);
-    if (data.amount < settings.min_deposit) {
-      throw new Error(`Minimum deposit is ₹${settings.min_deposit}`);
-    }
-    const { error } = await db.from("deposit_requests").insert({
-      uid: data.uid,
-      user_email: data.email,
-      amount: data.amount,
-      utr: data.utr,
+    if (data.amount < settings.min_deposit) throw new Error(`Minimum deposit is ₹${settings.min_deposit}`);
+    const all = await db.dbGet<Record<string, Deposit>>("deposits");
+    if (Object.values(all ?? {}).some((d) => d.utr === data.utr)) throw new Error("This UTR was already submitted");
+    const email = (context.claims as { email?: string })?.email ?? "";
+    const id = crypto.randomUUID();
+    await db.dbSet(`deposits/${id}`, {
+      user_id: context.userId, user_email: email, amount: data.amount, utr: data.utr,
+      status: "pending", created_at: new Date().toISOString(),
     });
-    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
-/* ---------- Admin side ---------- */
+/* ---------- Admin ---------- */
 
 export const adminGetSettings = createServerFn({ method: "POST" })
   .inputValidator((d: { password: string }) => d)
   .handler(async ({ data }) => {
     checkPassword(data?.password);
-    const db = await admin();
-    return readSettings(db);
+    return readSettings(await adb());
   });
 
 export const adminSaveSettings = createServerFn({ method: "POST" })
   .inputValidator((d: Record<string, unknown>) => {
-    const min = Number(d?.["min_deposit"]);
-    const price = Number(d?.["build_price"]);
-    if (!Number.isInteger(min) || min < 1 || min > 1_000_000) throw new Error("Invalid min deposit");
-    if (!Number.isInteger(price) || price < 0 || price > 1_000_000) throw new Error("Invalid build price");
+    const link = str(d?.["support_link"], "Support link", 500, false);
+    if (link && !/^(https?:\/\/|mailto:|tel:)\S+$/i.test(link)) throw new Error("Support link must start with https://, mailto: or tel:");
     return {
       password: d?.["password"] as string,
-      upi_id: str(d?.["upi_id"], "UPI ID", 100),
-      min_deposit: min,
-      build_price: price,
+      ...validateSiteIdentity(d),
+      upi_id: str(d?.["upi_id"], "UPI ID", 100, false),
+      min_deposit: int(d?.["min_deposit"], "min deposit", 1, 1_000_000),
+      maintenance_mode: d?.["maintenance_mode"] === true,
+      maintenance_message: str(d?.["maintenance_message"], "Maintenance message", 500, false),
+      support_link: link,
     };
   })
   .handler(async ({ data }) => {
     checkPassword(data.password);
     const { password: _p, ...fields } = data;
-    const db = await admin();
-    const { error } = await db
-      .from("settings")
-      .upsert({ id: 1, ...fields, updated_at: new Date().toISOString() });
-    if (error) throw new Error(error.message);
+    const db = await adb();
+    await db.dbUpdate("settings/main", { ...fields, updated_at: new Date().toISOString() });
     return { ok: true };
   });
 
@@ -115,40 +128,21 @@ export const adminListDeposits = createServerFn({ method: "POST" })
   .inputValidator((d: { password: string }) => d)
   .handler(async ({ data }) => {
     checkPassword(data?.password);
-    const db = await admin();
-    const { data: rows } = await db
-      .from("deposit_requests")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(100);
-    return rows ?? [];
+    const db = await adb();
+    const rec = await db.dbGet<Record<string, Deposit>>("deposits");
+    return keyed(rec).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 200);
   });
 
 export const adminDecideDeposit = createServerFn({ method: "POST" })
-  .inputValidator((d: { password: string; id: string; decision: "approve" | "reject" }) => d)
+  .inputValidator((d: { password: string; id: string; decision: "approve" | "reject" }) => ({ ...d, id: str(d?.id, "id", 64) }))
   .handler(async ({ data }) => {
-    checkPassword(data?.password);
-    if (!/^[0-9a-f-]{36}$/i.test(data.id)) throw new Error("Invalid id");
-    const db = await admin();
-    const { data: dep } = await db.from("deposit_requests").select("*").eq("id", data.id).maybeSingle();
-    if (!dep) throw new Error("Deposit not found");
-    if (dep.status !== "pending") throw new Error(`Already ${dep.status}`);
-
-    if (data.decision === "reject") {
-      await db.from("deposit_requests").update({ status: "rejected", updated_at: new Date().toISOString() }).eq("id", data.id);
-      return { status: "rejected" };
-    }
-
-    // Approve: credit the wallet, then mark approved
-    const { data: w } = await db.from("wallets").select("balance").eq("uid", dep.uid).maybeSingle();
-    const balance = (w?.balance ?? 0) + dep.amount;
-    const { error: wErr } = await db.from("wallets").upsert({
-      uid: dep.uid,
-      email: dep.user_email,
-      balance,
-      updated_at: new Date().toISOString(),
-    });
-    if (wErr) throw new Error(wErr.message);
-    await db.from("deposit_requests").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", data.id);
+    checkPassword(data.password);
+    const db = await adb();
+    const dep = await db.dbGet<Deposit>(`deposits/${data.id}`);
+    if (!dep || dep.status !== "pending") throw new Error("Deposit not found or already handled");
+    const status = data.decision === "approve" ? "approved" : "rejected";
+    await db.dbUpdate(`deposits/${data.id}`, { status, updated_at: new Date().toISOString() });
+    if (data.decision === "reject") return { status: "rejected" };
+    const balance = await walletChange(dep.user_id, dep.amount, "deposit", `Deposit (UTR ${dep.utr})`);
     return { status: "approved", balance };
   });
