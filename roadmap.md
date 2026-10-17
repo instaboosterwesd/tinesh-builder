@@ -11,8 +11,8 @@
 - [x] Live (Vercel) site loads media via asset proxy
 
 ## Remix setup
-- [ ] Replace the six requested secrets using secure entry. Blocked: secure form was declined, and the uploaded file has no matching setting labels.
-- [x] Clear copied Drizzle migration history and regenerate an empty migration set.
+- [ ] Replace FIREBASE_SERVICE_ACCOUNT, GITHUB_REPO, GITHUB_TOKEN, GOOGLE_API_KEY, IMGBB_API_KEY and VERCEL_TOKEN using secure entry. Blocked: the replacement form was declined in this remix setup; no values were changed.
+- [x] Clear copied Drizzle migration history and regenerate an empty migration set. Rechecked in this remix: Drizzle generated a PostgreSQL journal with zero entries and no SQL migrations; database data was not changed.
 
 ## Shared page background
 - [x] Make the home header lighter and search fully transparent.
@@ -20,5 +20,9 @@
 - [x] Verify Windows video playback, signed-out navigation persistence, admin entry, and mobile image fallback. Account-only page checks remain unavailable until sign-in is configured.
 
 ## Current
+- [x] Inspect idforge-creations source and export its Firebase Realtime Database as a safe JSON deliverable.
+- [ ] Universal inputs/formatter/automatic ID/Firebase writer implemented; real registration and APK flow blocked by missing authorized yususj service account (secure form declined). Tests cover formatting, package names, exact record, collision reservation and denied access.
+- [x] Update contextual memory with Universal registration behavior and verification limits.
+- [ ] Push tested source changes to the live-code and mirror GitHub repositories and verify remote contents.
 - [x] Fix failed APK build workflow (needs one real build to confirm)
 - [x] Transparent cards on Windows desktop

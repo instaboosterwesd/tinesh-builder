@@ -151,3 +151,13 @@ User writes Hinglish/Hindi; reply in simple Hindi. They want changes pushed dire
 - APK build failure fixed: Firebase Storage bucket does not exist (404), so upload-url failed. Workflows now upload APKs as GitHub release assets (tags build-<id>, enc-<id>), report path `release/<tag>/<file>.apk`; app serves HMAC-signed 24h links via /api/public/apk which redirects to the GitHub asset. Needs one real build to confirm.
 - Admin Settings → Appearance: desktop video on/off (off = image), card see-through sliders separately for computers (default 4% fill) and phones/tablets (default 20% fill). Stored in settings/main (desktop_video, glass_desktop, glass_mobile), applied via CSS vars on <html>.
 - Profile: Help and Log out buttons centered (max-w-xs).
+
+## Universal automatic registration (October 17, 2026)
+- Reference source: instaboosterwesd/idforge-creations, downloaded for inspection without Git metadata. It uses yususj Realtime Database, not the builder's tineshfirebase database.
+- Source Add fields: Name, Deposit, Image, Telegram, Domain, Invite code; optional manual ID. Target record is apps/<id> with switch ON and those six fields under variables. New Universal builds must generate an ID automatically instead of asking users for one.
+- Universal build asks for package name and register link plus optional Deposit/Telegram. App name and uploaded logo supply Name/Image; direct links split into Domain and Invite code, preserving hash-router formats and all query parameters.
+- Registration happens server-side, checks apps and bin for collisions, reserves with Firebase ETag, and persists app_id before dispatch. Existing build callback and APK patcher already pass app_id into slex.json; retries reuse it.
+- Other base package names remain server-generated. Universal package names are user-entered and validated server-side.
+- The uploaded builder service account authenticated successfully for tineshfirebase but returned 401 for authorized yususj reads. UNIVERSAL_FIREBASE_SERVICE_ACCOUNT needs a service account permitted on yususj. Never use unauthenticated write fallback or copy credentials into source.
+- Firebase JSON export is a standalone deliverable, not repository content. Secrets and credentials must be excluded from exports.
+- Verification: 11 targeted tests pass; preview home opens without browser errors but currently has no templates. Real Universal registration/APK flow is not verified because authorized yususj access is blocked. Secure credential form was declined, including after env.txt was re-uploaded.

@@ -1,5 +1,5 @@
-// Base apps the builder can patch. `needsAppId` bases ask the user for an App ID
-// instead of a register link. Ids are stored on templates — never rename an id.
+// Base apps the builder can patch. `needsAppId` bases receive an automatically
+// created registration ID. Ids are stored on templates — never rename an id.
 export const BASE_APKS = [
   { id: "bingo", label: "Wingo", needsAppId: false },
   { id: "ab", label: "Aviator", needsAppId: false },

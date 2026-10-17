@@ -15,6 +15,7 @@ import { productId } from "@/lib/product-id";
 import { useAuth } from "@/hooks/useAuth";
 import { HackerLoader, DetailSkeleton } from "@/components/effects/HackerLoader";
 import { SmartImage } from "@/components/SmartImage";
+import { splitRegisterLink } from "@/lib/universal-registration";
 
 const templateQuery = (id: string) => queryOptions({ queryKey: ["template", id], queryFn: () => getTemplate({ data: { id } }) });
 
@@ -121,9 +122,14 @@ function BuildDialog({ open, onOpenChange, template }: { open: boolean; onOpenCh
   const [step, setStep] = useState<Step>("details");
   const [appName, setAppName] = useState("");
   const [extra, setExtra] = useState("");
+  const [packageName, setPackageName] = useState("");
+  const [deposit, setDeposit] = useState("");
+  const [telegram, setTelegram] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const isTeacher = baseNeedsAppId(template.base_apk);
+  let formattedLink: ReturnType<typeof splitRegisterLink> | undefined;
+  try { if (extra && isTeacher) formattedLink = splitRegisterLink(extra); } catch { /* Keep typing; submission validates the link. */ }
   const balance = wallet?.balance ?? 0;
   const short = template.price > 0 && balance < template.price;
 
@@ -146,7 +152,7 @@ function BuildDialog({ open, onOpenChange, template }: { open: boolean; onOpenCh
       await userBuild({
         data: {
           template_id: template.id, app_name: appName, logo_path: path,
-          app_id: isTeacher ? extra : "", register_link: isTeacher ? "" : extra,
+          package_name: isTeacher ? packageName : "", register_link: extra, deposit, telegram,
         },
       });
       toast.success(template.price > 0 ? `Build started — ₹${template.price} paid from wallet` : "Build started");
@@ -165,7 +171,7 @@ function BuildDialog({ open, onOpenChange, template }: { open: boolean; onOpenCh
 
   return (
     <Dialog open={open} onOpenChange={(value) => { if (!loading) close(value); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90dvh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Build “{template.name}”</DialogTitle>
           <DialogDescription>
@@ -191,18 +197,19 @@ function BuildDialog({ open, onOpenChange, template }: { open: boolean; onOpenCh
                 <div className="space-y-1.5"><Label htmlFor="app">App name</Label><Input id="app" value={appName} onChange={(e) => setAppName(e.target.value)} required maxLength={60} placeholder="My App" /></div>
                 <div className="space-y-1.5">
                   <Label htmlFor="pkg">Package name</Label>
-                  <Input id="pkg" value="Auto-assigned on build" readOnly className="font-mono" />
+                  {isTeacher ? <Input id="pkg" value={packageName} onChange={(e) => setPackageName(e.target.value)} required maxLength={150} pattern="[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+" placeholder="com.example.myapp" className="font-mono" /> : <Input id="pkg" value="Auto-assigned on build" readOnly className="font-mono" />}
                 </div>
                 <Button type="submit" variant="hero">Next</Button>
               </form>
             )}
             {step === "extra" && (
               <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); setStep("logo"); }}>
-                {isTeacher ? (
-                  <div className="space-y-1.5"><Label htmlFor="extra">App ID</Label><Input id="extra" value={extra} onChange={(e) => setExtra(e.target.value)} required maxLength={64} pattern="[A-Za-z0-9_\-]+" placeholder="dfx85eyz" /></div>
-                ) : (
-                  <div className="space-y-1.5"><Label htmlFor="extra">Register link</Label><Input id="extra" type="url" value={extra} onChange={(e) => setExtra(e.target.value)} required maxLength={1000} placeholder="https://…" /></div>
-                )}
+                <div className="space-y-1.5"><Label htmlFor="extra">Register link</Label><Input id="extra" type="url" value={extra} onChange={(e) => setExtra(e.target.value)} required maxLength={1000} placeholder="https://…" /></div>
+                {isTeacher && <>
+                  <div className="space-y-1.5"><Label htmlFor="deposit">Deposit</Label><Input id="deposit" value={deposit} onChange={(e) => setDeposit(e.target.value)} maxLength={40} placeholder="100" /></div>
+                  <div className="space-y-1.5"><Label htmlFor="telegram">Telegram</Label><Input id="telegram" type="url" value={telegram} onChange={(e) => setTelegram(e.target.value)} maxLength={1000} placeholder="https://t.me/…" /></div>
+                  {formattedLink && <dl className="grid gap-1 text-xs text-muted-foreground"><dt>Domain</dt><dd className="break-all font-mono">{formattedLink.domain}</dd><dt>Invite code</dt><dd className="break-all font-mono">{formattedLink.invitecode || "—"}</dd></dl>}
+                </>}
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" className="flex-1" onClick={() => setStep("details")}>Back</Button>
                   <Button type="submit" variant="hero" className="flex-1">Next</Button>
@@ -219,7 +226,7 @@ function BuildDialog({ open, onOpenChange, template }: { open: boolean; onOpenCh
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" className="flex-1" onClick={() => setStep("extra")}>Back</Button>
                   <Button variant="hero" className="flex-1" disabled={loading || !logo} onClick={build}>
-                    {loading ? <HackerLoader compact label="Building your app" /> : <><Hammer className="size-4" />{template.price > 0 ? `Build — ₹${template.price}` : "Build"}</>}
+                    {loading ? <HackerLoader compact label="Building your app" /> : <><Hammer className="size-4" />{isTeacher ? (template.price > 0 ? `Add & build — ₹${template.price}` : "Add & build") : (template.price > 0 ? `Build — ₹${template.price}` : "Build")}</>}
                   </Button>
                 </div>
               </div>

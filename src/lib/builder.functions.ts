@@ -4,6 +4,7 @@ import { apkName, APP_ID_RE, checkPassword, int, LOGO_RE, signPath, str, uuid, w
 import { BASE_APKS, baseNeedsAppId } from "@/lib/base-apks";
 import { validateLogoUpload } from "@/lib/image-upload";
 import { randomPackageName } from "@/lib/package-name";
+import { splitRegisterLink, validatePackageName } from "@/lib/universal-registration";
 
 type TemplateRow = {
   id: string; name: string; description: string; category: string; base_apk: string; html: string;
@@ -86,15 +87,17 @@ export const userBuild = createServerFn({ method: "POST" })
     if (reg && !/^https?:\/\/\S+$/i.test(reg)) throw new Error("Link must start with http(s)://");
     const logo = str(d?.["logo_path"], "Logo", 200);
     if (!LOGO_RE.test(logo)) throw new Error("Invalid logo");
-    return { template_id: uuid(d?.["template_id"], "template"), app_name: str(d?.["app_name"], "App name", 60), package_name: randomPackageName(), app_id: appId || null, register_link: reg, logo_path: logo };
+    return { template_id: uuid(d?.["template_id"], "template"), app_name: str(d?.["app_name"], "App name", 60), package_name: str(d?.["package_name"], "Package name", 150, false), app_id: appId || null, register_link: reg, logo_path: logo, deposit: str(d?.["deposit"], "Deposit", 40, false), telegram: str(d?.["telegram"], "Telegram", 1000, false) };
   })
   .handler(async ({ data, context }) => {
     const db = await adb();
     const userId = context.userId;
     const t = await db.dbGet<{ name: string; base_apk: string; price: number }>(`templates/${data.template_id}`);
     if (!t) throw new Error("Template not found");
-    if (baseNeedsAppId(t.base_apk) && !data.app_id) throw new Error("App ID is required for this template");
-    if (!baseNeedsAppId(t.base_apk) && !data.register_link) throw new Error("Register link is required");
+    const universal = baseNeedsAppId(t.base_apk);
+    const packageName = universal ? validatePackageName(data.package_name) : randomPackageName();
+    if (!data.register_link) throw new Error("Register link is required");
+    if (universal) splitRegisterLink(data.register_link);
     const media = await db.dbGet<{ user_id: string }>(`mediaFiles/${data.logo_path.replace(/\./g, "_")}`);
     if (!media || media.user_id !== userId) throw new Error("Please upload your logo again");
     const profile = await db.dbGet<{ name?: string; email?: string }>(`profiles/${userId}`);
@@ -103,13 +106,26 @@ export const userBuild = createServerFn({ method: "POST" })
 
     const id = crypto.randomUUID();
     const row = {
-      ...data, id, user_id: userId, template_name: t.name, charged: t.price,
+      ...data, package_name: packageName, app_id: null as string | null, id, user_id: userId, template_name: t.name, charged: t.price,
       requester_name: profile?.name || "User", requester_email: profile?.email || "",
       status: "pending", created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     };
+    let registrationId: string | undefined;
     try {
+      if (universal) {
+        const { createUniversalRegistration } = await import("@/lib/universal-registration.server");
+        const image = await signPath(data.logo_path);
+        if (!image) throw new Error("Logo is unavailable");
+        const registration = await createUniversalRegistration({ name: data.app_name, image, deposit: data.deposit, telegram: data.telegram, registerLink: data.register_link });
+        registrationId = registration.id;
+        row.app_id = registration.id;
+      }
       await db.dbSet(`buildRequests/${id}`, row);
     } catch (e) {
+      if (registrationId) {
+        const { removeUniversalRegistration } = await import("@/lib/universal-registration.server");
+        await removeUniversalRegistration(registrationId).catch(() => {});
+      }
       if (t.price > 0) await walletChange(userId, t.price, "refund", `Refund: ${data.app_name}`);
       throw e;
     }
@@ -301,7 +317,8 @@ export const adminBuild = createServerFn({ method: "POST" })
       password: d?.["password"] as string,
       template_id: uuid(d?.["template_id"], "template"),
       app_name: str(d?.["app_name"], "App name", 60),
-      package_name: randomPackageName(), register_link: reg, logo_path: logo || null, app_id: appId || null,
+      package_name: str(d?.["package_name"], "Package name", 150, false), register_link: reg, logo_path: logo || null, app_id: appId || null,
+      deposit: str(d?.["deposit"], "Deposit", 40, false), telegram: str(d?.["telegram"], "Telegram", 1000, false),
     };
   })
   .handler(async ({ data }) => {
@@ -310,13 +327,28 @@ export const adminBuild = createServerFn({ method: "POST" })
     const db = await adb();
     const t = await db.dbGet<{ name: string; base_apk: string }>(`templates/${fields.template_id}`);
     if (!t) throw new Error("Template not found");
-    if (baseNeedsAppId(t.base_apk) && !fields.app_id) throw new Error("App ID is required for this template");
+    const universal = baseNeedsAppId(t.base_apk);
+    const packageName = universal ? validatePackageName(fields.package_name) : randomPackageName();
+    if (!fields.register_link) throw new Error("Register link is required");
+    if (universal) splitRegisterLink(fields.register_link);
     const id = crypto.randomUUID();
     const row = {
-      ...fields, id, template_name: t.name, requester_name: "Admin", requester_email: "admin@builder.local",
+      ...fields, package_name: packageName, app_id: null as string | null, id, template_name: t.name, requester_name: "Admin", requester_email: "admin@builder.local",
       status: "pending", created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     };
-    await db.dbSet(`buildRequests/${id}`, row);
+    if (universal) {
+      const { createUniversalRegistration } = await import("@/lib/universal-registration.server");
+      const image = await signPath(fields.logo_path);
+      const registration = await createUniversalRegistration({ name: fields.app_name, image: image ?? "", deposit: fields.deposit, telegram: fields.telegram, registerLink: fields.register_link });
+      row.app_id = registration.id;
+    }
+    try { await db.dbSet(`buildRequests/${id}`, row); } catch (error) {
+      if (row.app_id) {
+        const { removeUniversalRegistration } = await import("@/lib/universal-registration.server");
+        await removeUniversalRegistration(row.app_id).catch(() => {});
+      }
+      throw error;
+    }
     const { dispatchBuild } = await import("@/lib/dispatch.server");
     return { id, ...(await dispatchBuild(row)) };
   });
