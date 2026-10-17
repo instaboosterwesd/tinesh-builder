@@ -29,9 +29,3 @@ export function registrationRecord(input: { name: string; image: string; deposit
     variables: { name: input.name, image: input.image, deposit: input.deposit, telegram: input.telegram, ...splitRegisterLink(input.registerLink) },
   };
 }
-
-export function validatePackageName(value: unknown): string {
-  const name = typeof value === "string" ? value.trim() : "";
-  if (name.length > 150 || !/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/.test(name)) throw new Error("Enter a valid package name, such as com.example.myapp");
-  return name;
-}

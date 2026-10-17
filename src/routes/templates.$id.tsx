@@ -122,7 +122,6 @@ function BuildDialog({ open, onOpenChange, template }: { open: boolean; onOpenCh
   const [step, setStep] = useState<Step>("details");
   const [appName, setAppName] = useState("");
   const [extra, setExtra] = useState("");
-  const [packageName, setPackageName] = useState("");
   const [deposit, setDeposit] = useState("");
   const [telegram, setTelegram] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
@@ -152,7 +151,7 @@ function BuildDialog({ open, onOpenChange, template }: { open: boolean; onOpenCh
       await userBuild({
         data: {
           template_id: template.id, app_name: appName, logo_path: path,
-          package_name: isTeacher ? packageName : "", register_link: extra, deposit, telegram,
+          register_link: extra, deposit, telegram,
         },
       });
       toast.success(template.price > 0 ? `Build started — ₹${template.price} paid from wallet` : "Build started");
@@ -195,10 +194,6 @@ function BuildDialog({ open, onOpenChange, template }: { open: boolean; onOpenCh
             {step === "details" && (
               <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); setStep("extra"); }}>
                 <div className="space-y-1.5"><Label htmlFor="app">App name</Label><Input id="app" value={appName} onChange={(e) => setAppName(e.target.value)} required maxLength={60} placeholder="My App" /></div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="pkg">Package name</Label>
-                  {isTeacher ? <Input id="pkg" value={packageName} onChange={(e) => setPackageName(e.target.value)} required maxLength={150} pattern="[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+" placeholder="com.example.myapp" className="font-mono" /> : <Input id="pkg" value="Auto-assigned on build" readOnly className="font-mono" />}
-                </div>
                 <Button type="submit" variant="hero">Next</Button>
               </form>
             )}

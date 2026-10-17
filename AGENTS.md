@@ -19,7 +19,7 @@
 - Keep decorative animations in reusable effects components with browser work inside effects and reduced-motion handling; the shared background mounts once in the root provider outside the route outlet so navigation, pending states, and admin pages do not restart it. Login media stays on the auth page.
 - Use the global background token and CDN asset pointers for theme images; desktop video eligibility is shared with CSS media conditions that suppress static images before hydration, while mobile and reduced-motion visitors retain theme images.
 - Use shared HackerLoader/LoadingPanel for loading feedback, with scoped timers and reduced-motion support; consistent states must not block navigation or alter unrelated text.
-- Universal builds validate user-chosen package names server-side; other bases use the shared random package-name module, and retries retain stored names.
+- All new builds use the shared server-side random package-name module, discard client package overrides, and retain the stored name on retries; a single assignment policy covers user and admin builds.
 - IconScout calls go through the server-only searchIconscout proxy (src/lib/iconscout.functions.ts) reading ICONSCOUT_CLIENT_ID/SECRET; the client secret must never reach the browser. Loading UI uses shared HackerLoader/BrandLoader/SkeletonGrid/DetailSkeleton and SmartImage so states stay consistent.
 
 - Media pointers (/__l5e/...) are proxied in src/server.ts to the Lovable project host when the app runs off Lovable hosting (Vercel); without it all images/videos 404 there.

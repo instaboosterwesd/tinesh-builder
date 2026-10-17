@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { registrationId, registrationRecord, splitRegisterLink, validatePackageName } from "@/lib/universal-registration";
+import { registrationId, registrationRecord, splitRegisterLink } from "@/lib/universal-registration";
 
 describe("Universal registration", () => {
   it("splits a direct link into the existing domain and invite-code format", () => {
@@ -15,11 +15,6 @@ describe("Universal registration", () => {
     expect(registrationId(() => 0)).toBe("aaaaaaaa");
     expect(registrationId(() => 0.999)).toBe("99999999");
     expect(registrationId()).toMatch(/^[abcdefghijkmnpqrstuvwxyz23456789]{8}$/);
-  });
-  it("uses the user's valid Universal package name and rejects invalid names", () => {
-    expect(validatePackageName(" com.example.myapp ")).toBe("com.example.myapp");
-    expect(() => validatePackageName("not-a-package")).toThrow();
-    expect(() => validatePackageName("")).toThrow();
   });
   it("rejects credentials and non-web register links", () => {
     expect(() => splitRegisterLink("https://user:pass@example.com/register")).toThrow();

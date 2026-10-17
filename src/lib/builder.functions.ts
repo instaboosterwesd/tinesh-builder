@@ -4,7 +4,7 @@ import { apkName, APP_ID_RE, checkPassword, int, LOGO_RE, signPath, str, uuid, w
 import { BASE_APKS, baseNeedsAppId } from "@/lib/base-apks";
 import { validateLogoUpload } from "@/lib/image-upload";
 import { randomPackageName } from "@/lib/package-name";
-import { splitRegisterLink, validatePackageName } from "@/lib/universal-registration";
+import { splitRegisterLink } from "@/lib/universal-registration";
 
 type TemplateRow = {
   id: string; name: string; description: string; category: string; base_apk: string; html: string;
@@ -87,7 +87,7 @@ export const userBuild = createServerFn({ method: "POST" })
     if (reg && !/^https?:\/\/\S+$/i.test(reg)) throw new Error("Link must start with http(s)://");
     const logo = str(d?.["logo_path"], "Logo", 200);
     if (!LOGO_RE.test(logo)) throw new Error("Invalid logo");
-    return { template_id: uuid(d?.["template_id"], "template"), app_name: str(d?.["app_name"], "App name", 60), package_name: str(d?.["package_name"], "Package name", 150, false), app_id: appId || null, register_link: reg, logo_path: logo, deposit: str(d?.["deposit"], "Deposit", 40, false), telegram: str(d?.["telegram"], "Telegram", 1000, false) };
+    return { template_id: uuid(d?.["template_id"], "template"), app_name: str(d?.["app_name"], "App name", 60), app_id: appId || null, register_link: reg, logo_path: logo, deposit: str(d?.["deposit"], "Deposit", 40, false), telegram: str(d?.["telegram"], "Telegram", 1000, false) };
   })
   .handler(async ({ data, context }) => {
     const db = await adb();
@@ -95,7 +95,7 @@ export const userBuild = createServerFn({ method: "POST" })
     const t = await db.dbGet<{ name: string; base_apk: string; price: number }>(`templates/${data.template_id}`);
     if (!t) throw new Error("Template not found");
     const universal = baseNeedsAppId(t.base_apk);
-    const packageName = universal ? validatePackageName(data.package_name) : randomPackageName();
+    const packageName = randomPackageName();
     if (!data.register_link) throw new Error("Register link is required");
     if (universal) splitRegisterLink(data.register_link);
     const media = await db.dbGet<{ user_id: string }>(`mediaFiles/${data.logo_path.replace(/\./g, "_")}`);
@@ -317,7 +317,7 @@ export const adminBuild = createServerFn({ method: "POST" })
       password: d?.["password"] as string,
       template_id: uuid(d?.["template_id"], "template"),
       app_name: str(d?.["app_name"], "App name", 60),
-      package_name: str(d?.["package_name"], "Package name", 150, false), register_link: reg, logo_path: logo || null, app_id: appId || null,
+      register_link: reg, logo_path: logo || null, app_id: appId || null,
       deposit: str(d?.["deposit"], "Deposit", 40, false), telegram: str(d?.["telegram"], "Telegram", 1000, false),
     };
   })
@@ -328,7 +328,7 @@ export const adminBuild = createServerFn({ method: "POST" })
     const t = await db.dbGet<{ name: string; base_apk: string }>(`templates/${fields.template_id}`);
     if (!t) throw new Error("Template not found");
     const universal = baseNeedsAppId(t.base_apk);
-    const packageName = universal ? validatePackageName(fields.package_name) : randomPackageName();
+    const packageName = randomPackageName();
     if (!fields.register_link) throw new Error("Register link is required");
     if (universal) splitRegisterLink(fields.register_link);
     const id = crypto.randomUUID();
