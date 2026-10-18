@@ -15,6 +15,8 @@ import { QueryFeedback } from "@/components/QueryFeedback";
 import { withRequestTimeout } from "@/lib/request-timeout";
 import { useAuth } from "@/hooks/useAuth";
 import { SmartImage } from "@/components/SmartImage";
+import { tgDownloadLink, tgDownloadText } from "@/lib/telegram";
+import { getMyProfile } from "@/lib/users.functions";
 
 export const Route = createFileRoute("/orders")({
   head: () => ({
@@ -45,7 +47,12 @@ function Orders() {
   const fetchBuilds = useServerFn(myBuilds);
   const { data, isError, refetch } = useQuery({ queryKey: ["my-builds", user?.uid], queryFn: () => withRequestTimeout(() => fetchBuilds()), refetchInterval: 15000, retry: false });
   const rebuildFn = useServerFn(userRebuild);
-  const canRebuild = useSiteSettings().data?.user_rebuild === true;
+  const siteSettings = useSiteSettings().data;
+  const canRebuild = siteSettings?.user_rebuild === true;
+  const tgUser = siteSettings?.tg_download_username?.trim() ?? "";
+  const tgDownload = siteSettings?.tg_download_enabled === true && tgUser !== "";
+  const fetchProfile = useServerFn(getMyProfile);
+  const me = useQuery({ queryKey: ["my-profile", user?.uid], queryFn: () => withRequestTimeout(() => fetchProfile()), retry: false, staleTime: 30_000, enabled: tgDownload }).data?.profile;
   const [busy, setBusy] = useState<string | null>(null);
   const rebuild = async (id: string) => {
     setBusy(id);
@@ -80,7 +87,20 @@ function Orders() {
           </div>
           <div className="flex flex-col items-end gap-2">
             <StatusBadge status={b.status} />
-            {b.download && (
+            {b.status === "success" && tgDownload ? (
+              <Button asChild size="sm" variant="hero">
+                <a
+                  href={tgDownloadLink(tgUser, tgDownloadText(siteSettings?.tg_download_message ?? "", {
+                    orderId: b.id,
+                    appName: b.app_name,
+                    name: me?.name ?? user?.displayName ?? "",
+                    username: me?.telegram_id ? `@${me.telegram_id}` : "",
+                  }) + (user?.email ? encodeURIComponent(`\nEmail: ${user.email}`) : ""))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                ><LottieIcon src={STICKERS.download} className="size-5" /> Get APK</a>
+              </Button>
+            ) : b.download && (
               <Button asChild size="sm" variant="hero"><a href={b.download}><LottieIcon src={STICKERS.download} className="size-5" /> APK</a></Button>
             )}
             {canRebuild && (b.status === "success" || b.status === "failed") && (

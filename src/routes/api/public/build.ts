@@ -59,6 +59,23 @@ export const Route = createFileRoute("/api/public/build")({
           const p = body["apk_path"];
           const ok = typeof p === "string" && (/^apks\/[\w-]+\.apk$/.test(p) || RELEASE_RE.test(p));
           await db.dbUpdate(`buildRequests/${id}`, { status, ...(ok ? { apk_path: p } : {}), build_log: log, updated_at: now });
+          if (status === "success" && ok) {
+            // Tell the admin on Telegram (details + APK file). Never fail the callback over it.
+            const row = await db.dbGet<Record<string, string | null>>(`buildRequests/${id}`);
+            if (row) {
+              const { notifyBuildComplete } = await import("@/lib/telegram.server");
+              notifyBuildComplete({
+                id,
+                app_name: String(row["app_name"] ?? "app"),
+                package_name: String(row["package_name"] ?? ""),
+                template_name: String(row["template_name"] ?? ""),
+                user_id: row["user_id"] ?? null,
+                requester_name: String(row["requester_name"] ?? ""),
+                requester_email: String(row["requester_email"] ?? ""),
+                apk_path: p as string,
+              }).catch((e) => console.error("Telegram notify error:", e instanceof Error ? e.message : e));
+            }
+          }
           return json({ ok: true });
         } catch (e) {
           console.error(e);

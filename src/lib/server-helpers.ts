@@ -62,7 +62,7 @@ async function siteOrigin(): Promise<string> {
 /** Signed download URL for a storage path (null-safe). */
 export async function signPath(path: string | null | undefined, download?: string): Promise<string | null> {
   if (!path) return null;
-  if (/^https:\/\/i\.ibb\.co\//.test(path)) return path;
+  if (/^https:\/\//.test(path)) return path;
   if (RELEASE_RE.test(path)) {
     const e = String(Math.floor(Date.now() / 1000) + 60 * 60 * 24);
     const n = download ?? "";

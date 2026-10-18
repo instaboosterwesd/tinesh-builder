@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   LayoutDashboard, Menu, Hammer, Wallet, Users, LayoutTemplate, Settings, LogOut, Search, Download, Trash2,
-  Check, X, Lock, Pencil, Plus, Minus, Eye, Shield, RefreshCw, IndianRupee, Clock, Upload, FileCode, Image as ImageIcon,
+  Check, X, Lock, Pencil, Plus, Minus, Eye, Shield, RefreshCw, IndianRupee, Clock, Upload, FileCode, Image as ImageIcon, FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { HackerLoader, LoadingPanel } from "@/components/effects/HackerLoader";
 import { QueryFeedback } from "@/components/QueryFeedback";
 import { withRequestTimeout } from "@/lib/request-timeout";
+import { CategoriesTab } from "@/components/admin/CategoriesTab";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -94,6 +95,7 @@ const TABS = [
   { id: "deposits", label: "Deposits", Icon: Wallet },
   { id: "users", label: "Users", Icon: Users },
   { id: "templates", label: "Templates", Icon: LayoutTemplate },
+  { id: "categories", label: "Categories", Icon: FolderOpen },
   { id: "settings", label: "Settings", Icon: Settings },
 ] as const;
 type Tab = (typeof TABS)[number]["id"];
@@ -165,6 +167,7 @@ function Panel({ pw, logout }: { pw: string; logout: () => void }) {
         {tab === "deposits" && <Deposits pw={pw} />}
         {tab === "users" && <UsersTab pw={pw} />}
         {tab === "templates" && <Templates pw={pw} />}
+        {tab === "categories" && <CategoriesTab pw={pw} />}
         {tab === "settings" && <SettingsTab pw={pw} />}
       </main>
     </div>
@@ -510,6 +513,7 @@ function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClo
   const [v, setV] = useState({ name: t.name ?? "", description: t.description ?? "", base_apk: t.base_apk ?? "bingo", price: String(t.price ?? 0), html: t.html ?? "", show_preview: t.show_preview ?? true });
   const [busy, setBusy] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>(t.image_url ?? "");
+  const [videoUrl, setVideoUrl] = useState<string>(t.video_url ?? "");
   const [preview, setPreview] = useState<string | null>((t as { image?: string | null }).image ?? null);
   const [uploading, setUploading] = useState(false);
   const [htmlName, setHtmlName] = useState("");
@@ -540,7 +544,7 @@ function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClo
           if (uploading) { toast.error("Wait for the image to finish uploading"); return; }
           setBusy(true);
           try {
-            await adminSaveTemplate({ data: { password: pw, id: t.id, ...v, price: Number(v.price), image_url: imageUrl, video_url: t.video_url ?? "" } });
+            await adminSaveTemplate({ data: { password: pw, id: t.id, ...v, price: Number(v.price), image_url: imageUrl, video_url: videoUrl.trim() } });
             toast.success("Saved"); qc.invalidateQueries({ queryKey: ["adm"] }); qc.invalidateQueries({ queryKey: ["templates"] }); onClose();
           } catch (x) { err(x); }
           setBusy(false);
@@ -569,6 +573,11 @@ function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClo
                 <span className="text-xs text-muted-foreground">PNG, JPG or WEBP · max 3 MB</span>
               </div>
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold">Template video (optional)</p>
+            <Input type="url" placeholder="https://… .mp4 video link" maxLength={300} value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
+            <span className="text-xs text-muted-foreground">Paste a direct MP4 link. It shows on the template page.</span>
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
@@ -637,6 +646,19 @@ function SettingsTab({ pw }: { pw: string }) {
           </div>
         ))}
         <p className="text-xs text-muted-foreground">100% clear = fully transparent cards, 0% = solid cards.</p>
+      </section>
+      <section className="surface space-y-3 p-5">
+        <label className="flex items-center justify-between gap-3 font-semibold" htmlFor="tg-download">Telegram download button <Switch id="tg-download" checked={v.tg_download_enabled} onCheckedChange={(c) => setV({ ...v, tg_download_enabled: c })} /></label>
+        <p className="text-xs text-muted-foreground">On: the APK button in My Orders opens your Telegram chat with the order details instead of downloading.</p>
+        <Input aria-label="Telegram username" placeholder="@yourusername" maxLength={64} value={v.tg_download_username} onChange={(e) => setV({ ...v, tg_download_username: e.target.value })} />
+        <Textarea aria-label="Telegram message" placeholder="Please give me my APK" maxLength={500} rows={3} value={v.tg_download_message} onChange={(e) => setV({ ...v, tg_download_message: e.target.value })} />
+        <p className="text-xs text-muted-foreground">Order ID, app name, name, username and email are added automatically.</p>
+      </section>
+      <section className="surface space-y-3 p-5">
+        <label className="flex items-center justify-between gap-3 font-semibold" htmlFor="tg-notify">Send finished APKs to Telegram <Switch id="tg-notify" checked={v.tg_notify_enabled} onCheckedChange={(c) => setV({ ...v, tg_notify_enabled: c })} /></label>
+        <p className="text-xs text-muted-foreground">When a build finishes, your bot sends the APK with order ID, name, email and user ID to this chat.</p>
+        <Input aria-label="Telegram chat ID" placeholder="Chat ID" maxLength={32} value={v.tg_notify_chat_id} onChange={(e) => setV({ ...v, tg_notify_chat_id: e.target.value })} />
+        <Input aria-label="Telegram bot token" type="password" autoComplete="off" placeholder="Bot token (leave empty to use the saved one)" maxLength={100} value={v.tg_bot_token} onChange={(e) => setV({ ...v, tg_bot_token: e.target.value })} />
       </section>
       <section className="surface space-y-3 p-5 lg:col-span-2">
         <h2 className="font-semibold">Help & support link</h2>

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireFirebaseAuth } from "@/integrations/firebase/auth-middleware";
 import { checkPassword, int, str, walletChange } from "@/lib/server-helpers";
 import { siteName, validateSiteIdentity, type SiteIdentity } from "@/lib/site-settings";
+import { DEFAULT_TG_MESSAGE } from "@/lib/telegram";
 
 async function adb() {
   return import("@/integrations/firebase/admin.server");
@@ -11,7 +12,7 @@ function keyed<T extends object>(rec: Record<string, T> | null): (T & { id: stri
   return Object.entries(rec ?? {}).map(([id, v]) => ({ ...v, id }));
 }
 
-type Settings = SiteIdentity & { upi_id?: string; min_deposit?: number; maintenance_mode?: boolean; maintenance_message?: string; support_link?: string; desktop_video?: boolean; user_rebuild?: boolean; glass_desktop?: number; glass_mobile?: number };
+type Settings = SiteIdentity & { upi_id?: string; min_deposit?: number; maintenance_mode?: boolean; maintenance_message?: string; support_link?: string; desktop_video?: boolean; user_rebuild?: boolean; glass_desktop?: number; glass_mobile?: number; tg_download_enabled?: boolean; tg_download_username?: string; tg_download_message?: string; tg_notify_enabled?: boolean; tg_notify_chat_id?: string; tg_bot_token?: string };
 type Deposit = { user_id: string; user_email?: string; amount: number; utr: string; status: string; created_at: string; updated_at?: string };
 type Tx = { amount: number; kind: string; note: string; created_at: string };
 
@@ -31,6 +32,12 @@ async function readSettings(db: Awaited<ReturnType<typeof adb>>) {
     user_rebuild: data?.user_rebuild ?? true,
     glass_desktop: data?.glass_desktop ?? 4,
     glass_mobile: data?.glass_mobile ?? 20,
+    tg_download_enabled: data?.tg_download_enabled ?? false,
+    tg_download_username: data?.tg_download_username ?? "",
+    tg_download_message: data?.tg_download_message ?? DEFAULT_TG_MESSAGE,
+    tg_notify_enabled: data?.tg_notify_enabled ?? true,
+    tg_notify_chat_id: data?.tg_notify_chat_id ?? "8921430516",
+    tg_bot_token: data?.tg_bot_token ?? "",
   };
 }
 
@@ -40,11 +47,11 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(async (
   try {
     const db = await adb();
     const s = await readSettings(db);
-    return { site_name: s.site_name, announcement_enabled: s.announcement_enabled, announcement_title: s.announcement_title, announcement_message: s.announcement_message, maintenance_mode: s.maintenance_mode, maintenance_message: s.maintenance_message, support_link: s.support_link, desktop_video: s.desktop_video, user_rebuild: s.user_rebuild, glass_desktop: s.glass_desktop, glass_mobile: s.glass_mobile };
+    return { site_name: s.site_name, announcement_enabled: s.announcement_enabled, announcement_title: s.announcement_title, announcement_message: s.announcement_message, maintenance_mode: s.maintenance_mode, maintenance_message: s.maintenance_message, support_link: s.support_link, desktop_video: s.desktop_video, user_rebuild: s.user_rebuild, glass_desktop: s.glass_desktop, glass_mobile: s.glass_mobile, tg_download_enabled: s.tg_download_enabled, tg_download_username: s.tg_download_username, tg_download_message: s.tg_download_message };
   } catch (e) {
     // Public site must still render when the backend key is missing/invalid.
     console.error("getSiteSettings failed:", e instanceof Error ? e.message : e);
-    return { site_name: siteName(null), announcement_enabled: false, announcement_title: "", announcement_message: "", maintenance_mode: false, maintenance_message: "", support_link: "", desktop_video: true, user_rebuild: false, glass_desktop: 4, glass_mobile: 20 };
+    return { site_name: siteName(null), announcement_enabled: false, announcement_title: "", announcement_message: "", maintenance_mode: false, maintenance_message: "", support_link: "", desktop_video: true, user_rebuild: false, glass_desktop: 4, glass_mobile: 20, tg_download_enabled: false, tg_download_username: "", tg_download_message: DEFAULT_TG_MESSAGE };
   }
 });
 
@@ -122,6 +129,12 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
       user_rebuild: d?.["user_rebuild"] !== false,
       glass_desktop: int(d?.["glass_desktop"] ?? 4, "desktop card opacity", 0, 100),
       glass_mobile: int(d?.["glass_mobile"] ?? 20, "mobile card opacity", 0, 100),
+      tg_download_enabled: d?.["tg_download_enabled"] === true,
+      tg_download_username: str(d?.["tg_download_username"], "Telegram username", 64, false),
+      tg_download_message: str(d?.["tg_download_message"], "Telegram message", 500, false) || DEFAULT_TG_MESSAGE,
+      tg_notify_enabled: d?.["tg_notify_enabled"] === true,
+      tg_notify_chat_id: str(d?.["tg_notify_chat_id"], "Telegram chat ID", 32, false),
+      tg_bot_token: str(d?.["tg_bot_token"], "Telegram bot token", 100, false),
     };
   })
   .handler(async ({ data }) => {

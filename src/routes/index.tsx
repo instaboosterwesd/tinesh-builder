@@ -8,11 +8,13 @@ import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { baseApkLabel } from "@/lib/base-apks";
 import { matchesProduct, productId } from "@/lib/product-id";
-import { listTemplates } from "@/lib/builder.functions";
+import { listTemplates, type Template } from "@/lib/builder.functions";
+import { listCategories, type CategoryCard } from "@/lib/categories.functions";
 import { SmartImage } from "@/components/SmartImage";
 import { SkeletonGrid } from "@/components/effects/HackerLoader";
 
 export const templatesQuery = queryOptions({ queryKey: ["templates"], queryFn: () => listTemplates() });
+const categoriesQuery = queryOptions({ queryKey: ["categories"], queryFn: () => listCategories() });
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,7 +27,7 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(templatesQuery),
+  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(templatesQuery), context.queryClient.ensureQueryData(categoriesQuery)]),
   pendingComponent: () => <AppShell><main className="mx-auto max-w-6xl px-4 py-6"><SkeletonGrid /></main></AppShell>,
   pendingMs: 200,
   component: Index,
@@ -33,6 +35,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { data: templates } = useSuspenseQuery(templatesQuery);
+  const { data: categories } = useSuspenseQuery(categoriesQuery);
   const [q, setQ] = useState("");
 
   useEffect(() => { preloadLottie([STICKERS.search, STICKERS.leaders, STICKERS.video]); }, []);
@@ -41,6 +44,11 @@ function Index() {
   const list = useMemo(() => templates.filter((t) => matchesProduct(t, q)), [templates, q]);
 
   const searching = q.trim() !== "";
+  const byId = useMemo(() => new Map(templates.map((t) => [t.id, t])), [templates]);
+  const rest = useMemo(() => {
+    const used = new Set(categories.flatMap((c) => c.template_ids));
+    return templates.filter((t) => !used.has(t.id));
+  }, [templates, categories]);
 
   return (
     <AppShell search={
@@ -56,7 +64,7 @@ function Index() {
           </div>
     }>
       <section className="relative z-10 mx-auto max-w-7xl px-4 pb-28 pt-5 lg:px-8">
-        {list.length === 0 ? (
+        {list.length === 0 && (searching || !categories.some((c) => c.cards.length)) ? (
           <div className="surface grid place-items-center p-10 text-center sm:p-14">
             <span className="grid size-16 place-items-center rounded-3xl bg-accent text-accent-foreground shadow-soft">
               <LottieIcon src={templates.length ? STICKERS.search : STICKERS.leaders} className="size-10" />
@@ -75,9 +83,38 @@ function Index() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-5 xl:grid-cols-4">
-            {list.map((t) => (
-              <Link key={t.id} to="/templates/$id" params={{ id: t.id }} className="surface group flex flex-col overflow-hidden p-1.5 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow active:scale-[0.99] sm:p-2">
+          searching || categories.length === 0 ? <TemplateGrid list={list} /> : (
+            <div className="space-y-8">
+              {categories.map((c) => {
+                const items = c.template_ids.map((id) => byId.get(id)).filter((t): t is Template => !!t);
+                if (!items.length && !c.cards.length) return null;
+                return (
+                  <div key={c.id}>
+                    <h2 className="mb-3 text-lg font-bold sm:text-xl">{c.name}</h2>
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-5 xl:grid-cols-4">
+                      {items.map((t) => <TemplateCard key={t.id} t={t} />)}
+                      {c.cards.map((k) => <LinkCard key={k.id} k={k} />)}
+                    </div>
+                  </div>
+                );
+              })}
+              {rest.length > 0 && (
+                <div>
+                  <h2 className="mb-3 text-lg font-bold sm:text-xl">More templates</h2>
+                  <TemplateGrid list={rest} />
+                </div>
+              )}
+            </div>
+          )
+        )}
+      </section>
+    </AppShell>
+  );
+}
+
+function TemplateCard({ t }: { t: Template }) {
+  return (
+    <Link to="/templates/$id" params={{ id: t.id }} className="surface group flex flex-col overflow-hidden p-1.5 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow active:scale-[0.99] sm:p-2">
                 <div className="relative aspect-square overflow-hidden rounded-[calc(var(--radius)*1.2)] bg-muted/40">
                   {t.image ? (
                     <SmartImage src={t.image} alt={t.name} className="h-full w-full transition duration-500 group-hover:scale-105" />
@@ -98,10 +135,27 @@ function Index() {
                   <span className="mt-0.5 block truncate font-mono text-[10px] font-medium text-primary sm:text-[11px]">#{productId(t.id)} · {baseApkLabel(t.base_apk)}</span>
                 </div>
               </Link>
-            ))}
-          </div>
-        )}
-      </section>
-    </AppShell>
+  );
+}
+
+function TemplateGrid({ list }: { list: Template[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-5 xl:grid-cols-4">
+      {list.map((t) => <TemplateCard key={t.id} t={t} />)}
+    </div>
+  );
+}
+
+function LinkCard({ k }: { k: CategoryCard }) {
+  return (
+    <a href={k.link} target="_blank" rel="noopener noreferrer" className="surface group flex flex-col overflow-hidden p-1.5 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow active:scale-[0.99] sm:p-2">
+      <div className="relative aspect-square overflow-hidden rounded-[calc(var(--radius)*1.2)] bg-muted/40">
+        <SmartImage src={k.image} alt={k.name} className="h-full w-full transition duration-500 group-hover:scale-105" />
+      </div>
+      <div className="min-w-0 px-1.5 pb-1.5 pt-2.5 sm:px-2 sm:pt-3">
+        <h3 className="truncate text-sm font-semibold sm:text-base lg:text-lg">{k.name}</h3>
+        <span className="mt-2 block rounded-full bg-gradient-primary px-3 py-1.5 text-center text-xs font-bold text-primary-foreground shadow-glow">{k.button || "Buy Now"}</span>
+      </div>
+    </a>
   );
 }
