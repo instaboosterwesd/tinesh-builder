@@ -26,9 +26,8 @@ export const Route = createFileRoute("/api/public/apk")({
         }
         const asset = ((await rel.json()) as { assets: { name: string; url: string }[] }).assets.find((a) => a.name === file);
         if (!asset) return new Response("APK not found", { status: 404 });
-        const dl = await fetch(asset.url, { headers: { ...gh, Accept: "application/octet-stream" }, redirect: "manual" });
-        const loc = dl.headers.get("Location");
-        if (loc) return Response.redirect(loc, 302);
+        // Stream through (no redirect) so the browser uses our app-name filename.
+        const dl = await fetch(asset.url, { headers: { ...gh, Accept: "application/octet-stream" } });
         if (!dl.ok || !dl.body) return new Response("Download failed", { status: 502 });
         return new Response(dl.body, {
           headers: {
