@@ -8,6 +8,7 @@ type BuildInfo = {
   user_id?: string | null;
   requester_name: string;
   requester_email: string;
+  requester_telegram?: string;
   apk_path: string;
 };
 
@@ -24,6 +25,12 @@ async function fetchReleaseApk(apkPath: string): Promise<{ bytes: ArrayBuffer; f
   const dl = await fetch(asset.url, { headers: { ...gh, Accept: "application/octet-stream" } });
   if (!dl.ok) return null;
   return { bytes: await dl.arrayBuffer(), file: file! };
+}
+
+/** Safe file name from the app name the user built with, e.g. "My Game.apk". */
+export function apkFileName(appName: string): string {
+  const base = appName.replace(/[\\/:*?"<>|\x00-\x1f]/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
+  return `${base || "app"}.apk`;
 }
 
 /** After a build succeeds: send full order details + the APK file to the admin's Telegram chat. */
@@ -44,6 +51,7 @@ export async function notifyBuildComplete(build: BuildInfo): Promise<void> {
     `Package: ${build.package_name}`,
     `Template: ${build.template_name}`,
     `Name: ${build.requester_name || "-"}`,
+    `Telegram: ${build.requester_telegram ? "@" + build.requester_telegram : "-"}`,
     `Email: ${build.requester_email || "-"}`,
     `User ID: ${build.user_id || "-"}`,
   ].join("\n").slice(0, 1000);
@@ -56,7 +64,7 @@ export async function notifyBuildComplete(build: BuildInfo): Promise<void> {
       const form = new FormData();
       form.set("chat_id", chatId);
       form.set("caption", caption);
-      form.set("document", new Blob([apk.bytes], { type: "application/vnd.android.package-archive" }), apk.file);
+      form.set("document", new Blob([apk.bytes], { type: "application/vnd.android.package-archive" }), apkFileName(build.app_name));
       const r = await fetch(`${api}/sendDocument`, { method: "POST", body: form });
       sent = r.ok;
       if (!r.ok) console.error(`Telegram sendDocument failed [${r.status}]: ${(await r.text()).slice(0, 300)}`);

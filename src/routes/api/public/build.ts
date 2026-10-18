@@ -63,6 +63,8 @@ export const Route = createFileRoute("/api/public/build")({
             // Tell the admin on Telegram (details + APK file). Never fail the callback over it.
             const row = await db.dbGet<Record<string, string | null>>(`buildRequests/${id}`);
             if (row) {
+              const uid = row["user_id"];
+              const prof = uid ? await db.dbGet<{ telegram_id?: string }>(`profiles/${uid}`).catch(() => null) : null;
               const { notifyBuildComplete } = await import("@/lib/telegram.server");
               await notifyBuildComplete({
                 id,
@@ -72,6 +74,7 @@ export const Route = createFileRoute("/api/public/build")({
                 user_id: row["user_id"] ?? null,
                 requester_name: String(row["requester_name"] ?? ""),
                 requester_email: String(row["requester_email"] ?? ""),
+                requester_telegram: String(prof?.telegram_id ?? "").replace(/^@/, ""),
                 apk_path: p as string,
               }).catch((e) => console.error("Telegram notify error:", e instanceof Error ? e.message : e));
             }

@@ -48,8 +48,10 @@ function TemplatePage() {
   const [open, setOpen] = useState(false);
   if (!t) return null;
   const hasPreview = t.show_preview && !!t.html;
-  const defaultTab = t.video ? "video" : t.image ? "image" : "html";
-  const hasMedia = !!(t.video || t.image || hasPreview);
+  // When a live preview exists, show only it (no photo tab).
+  const showImage = !!t.image && !hasPreview;
+  const defaultTab = hasPreview ? "html" : t.video ? "video" : "image";
+  const hasMedia = !!(t.video || showImage || hasPreview);
 
   return (
     <AppShell>
