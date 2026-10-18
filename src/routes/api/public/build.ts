@@ -64,7 +64,7 @@ export const Route = createFileRoute("/api/public/build")({
             const row = await db.dbGet<Record<string, string | null>>(`buildRequests/${id}`);
             if (row) {
               const { notifyBuildComplete } = await import("@/lib/telegram.server");
-              notifyBuildComplete({
+              await notifyBuildComplete({
                 id,
                 app_name: String(row["app_name"] ?? "app"),
                 package_name: String(row["package_name"] ?? ""),

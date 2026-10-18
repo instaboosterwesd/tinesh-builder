@@ -16,6 +16,7 @@ import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as WalletRouteImport } from './routes/wallet'
+import { Route as CategoryIdRouteImport } from './routes/category.$id'
 import { Route as TemplatesIdRouteImport } from './routes/templates.$id'
 import { Route as ApiPublicApkRouteImport } from './routes/api/public/apk'
 import { Route as ApiPublicBuildRouteImport } from './routes/api/public/build'
@@ -55,6 +56,11 @@ const WalletRoute = WalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CategoryIdRoute = CategoryIdRouteImport.update({
+  id: '/category/$id',
+  path: '/category/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TemplatesIdRoute = TemplatesIdRouteImport.update({
   id: '/templates/$id',
   path: '/templates/$id',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/orders': typeof OrdersRoute
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRoute
+  '/category/$id': typeof CategoryIdRoute
   '/templates/$id': typeof TemplatesIdRoute
   '/api/public/apk': typeof ApiPublicApkRoute
   '/api/public/build': typeof ApiPublicBuildRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/orders': typeof OrdersRoute
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRoute
+  '/category/$id': typeof CategoryIdRoute
   '/templates/$id': typeof TemplatesIdRoute
   '/api/public/apk': typeof ApiPublicApkRoute
   '/api/public/build': typeof ApiPublicBuildRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/orders': typeof OrdersRoute
   '/profile': typeof ProfileRoute
   '/wallet': typeof WalletRoute
+  '/category/$id': typeof CategoryIdRoute
   '/templates/$id': typeof TemplatesIdRoute
   '/api/public/apk': typeof ApiPublicApkRoute
   '/api/public/build': typeof ApiPublicBuildRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/profile'
     | '/wallet'
+    | '/category/$id'
     | '/templates/$id'
     | '/api/public/apk'
     | '/api/public/build'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/profile'
     | '/wallet'
+    | '/category/$id'
     | '/templates/$id'
     | '/api/public/apk'
     | '/api/public/build'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/profile'
     | '/wallet'
+    | '/category/$id'
     | '/templates/$id'
     | '/api/public/apk'
     | '/api/public/build'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   OrdersRoute: typeof OrdersRoute
   ProfileRoute: typeof ProfileRoute
   WalletRoute: typeof WalletRoute
+  CategoryIdRoute: typeof CategoryIdRoute
   TemplatesIdRoute: typeof TemplatesIdRoute
   ApiPublicApkRoute: typeof ApiPublicApkRoute
   ApiPublicBuildRoute: typeof ApiPublicBuildRoute
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/category/$id': {
+      id: '/category/$id'
+      path: '/category/$id'
+      fullPath: '/category/$id'
+      preLoaderRoute: typeof CategoryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/templates/$id': {
       id: '/templates/$id'
       path: '/templates/$id'
@@ -243,6 +263,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersRoute: OrdersRoute,
   ProfileRoute: ProfileRoute,
   WalletRoute: WalletRoute,
+  CategoryIdRoute: CategoryIdRoute,
   TemplatesIdRoute: TemplatesIdRoute,
   ApiPublicApkRoute: ApiPublicApkRoute,
   ApiPublicBuildRoute: ApiPublicBuildRoute,
