@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   LayoutDashboard, Menu, Hammer, Wallet, Users, LayoutTemplate, Settings, LogOut, Search, Download, Trash2,
-  Check, X, Lock, Pencil, Plus, Minus, Eye, Shield, RefreshCw, IndianRupee, Clock, Upload, FileCode, Image as ImageIcon, FolderOpen,
+  Check, X, Lock, Pencil, Plus, Minus, Eye, Shield, RefreshCw, IndianRupee, Clock, Upload, FileCode, Image as ImageIcon, FolderOpen, Music,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ import { HackerLoader, LoadingPanel } from "@/components/effects/HackerLoader";
 import { QueryFeedback } from "@/components/QueryFeedback";
 import { withRequestTimeout } from "@/lib/request-timeout";
 import { CategoriesTab } from "@/components/admin/CategoriesTab";
+import { AudioTab } from "@/components/admin/AudioTab";
 import { uploadVideo } from "@/lib/cloudinary";
 
 export const Route = createFileRoute("/admin")({
@@ -97,6 +98,7 @@ const TABS = [
   { id: "users", label: "Users", Icon: Users },
   { id: "templates", label: "Templates", Icon: LayoutTemplate },
   { id: "categories", label: "Categories", Icon: FolderOpen },
+  { id: "audio", label: "Audio", Icon: Music },
   { id: "settings", label: "Settings", Icon: Settings },
 ] as const;
 type Tab = (typeof TABS)[number]["id"];
@@ -169,6 +171,7 @@ function Panel({ pw, logout }: { pw: string; logout: () => void }) {
         {tab === "users" && <UsersTab pw={pw} />}
         {tab === "templates" && <Templates pw={pw} />}
         {tab === "categories" && <CategoriesTab pw={pw} />}
+        {tab === "audio" && <AudioTab pw={pw} />}
         {tab === "settings" && <SettingsTab pw={pw} />}
       </main>
     </div>

@@ -103,7 +103,7 @@ function TemplatePage() {
                 <p className="text-xl font-bold">{t.price > 0 ? `₹${t.price}` : "Free"}</p>
               </div>
             </div>
-            <Button variant="hero" size="lg" className="mt-4 w-full" onClick={() => setOpen(true)}>
+            <Button variant="hero" size="lg" className="mt-4 w-full" data-sound="act_build" onClick={() => setOpen(true)}>
               <Hammer /> Build this app
             </Button>
           </aside>
@@ -188,7 +188,7 @@ function BuildDialog({ open, onOpenChange, template }: { open: boolean; onOpenCh
         ) : short ? (
           <div className="rounded-xl border border-warning/40 bg-warning/10 p-4 text-center">
             <p className="text-sm font-medium">Your balance is ₹{balance}. You need ₹{template.price - balance} more.</p>
-            <Button variant="hero" className="mt-3 w-full" onClick={() => navigate({ to: "/wallet" })}><Wallet className="size-4" /> Add balance</Button>
+            <Button variant="hero" className="mt-3 w-full" data-sound="act_add_balance" onClick={() => navigate({ to: "/wallet" })}><Wallet className="size-4" /> Add balance</Button>
           </div>
         ) : (
           <>
@@ -222,7 +222,7 @@ function BuildDialog({ open, onOpenChange, template }: { open: boolean; onOpenCh
                 </label>
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" className="flex-1" onClick={() => setStep("extra")}>Back</Button>
-                  <Button variant="hero" className="flex-1" disabled={loading || !logo} onClick={build}>
+                  <Button variant="hero" className="flex-1" data-sound="act_build_submit" disabled={loading || !logo} onClick={build}>
                     {loading ? <HackerLoader compact label="Building your app" /> : <><Hammer className="size-4" />{isTeacher ? (template.price > 0 ? `Add & build — ₹${template.price}` : "Add & build") : (template.price > 0 ? `Build — ₹${template.price}` : "Build")}</>}
                   </Button>
                 </div>

@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import { Wrench, LifeBuoy } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ClickSounds } from "@/components/ClickSounds";
 import { ProfileCompletion } from "@/components/ProfileCompletion";
 import { themeInitScript } from "@/lib/theme";
 import { siteSettingsQuery } from "@/hooks/useSiteSettings";
@@ -146,6 +147,7 @@ function RootComponent() {
           <Outlet />
         </MaintenanceGate>
         <ProfileCompletion />
+        <ClickSounds />
         <Toaster richColors position="top-center" />
         </div>
       </AuthProvider>

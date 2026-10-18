@@ -57,7 +57,7 @@ function WalletPage() {
         <p className="flex items-center gap-2 text-sm opacity-80"><LottieIcon src={STICKERS.balance} className="size-6" />Available balance</p>
         <p className="mt-1 font-display text-4xl font-bold text-primary">₹{data.balance}</p>
         <div className="mt-5 flex gap-2">
-          <Button variant="hero" onClick={() => setOpen(true)}><LottieIcon src={STICKERS.addFunds} className="size-5" /> Add balance</Button>
+          <Button variant="hero" data-sound="act_add_balance" onClick={() => setOpen(true)}><LottieIcon src={STICKERS.addFunds} className="size-5" /> Add balance</Button>
           {data.support_link && (
             <Button variant="ghost" asChild>
               <a href={data.support_link} target="_blank" rel="noreferrer"><LifeBuoy className="size-4" /> Help</a>
@@ -185,7 +185,7 @@ function DepositDialog({ open, onOpenChange, upi, min }: { open: boolean; onOpen
               {upi} <LottieIcon src={STICKERS.copy} className="size-4" />
             </button>
             <a href={upiUrl} className="text-sm font-medium text-primary sm:hidden">Open UPI app</a>
-            <Button variant="hero" onClick={() => setStep("utr")}><LottieIcon src={STICKERS.verified} className="size-5" /> I have paid</Button>
+            <Button variant="hero" data-sound="act_paid" onClick={() => setStep("utr")}><LottieIcon src={STICKERS.verified} className="size-5" /> I have paid</Button>
           </div>
         ) : (
           <form className="grid gap-3" onSubmit={submit}>

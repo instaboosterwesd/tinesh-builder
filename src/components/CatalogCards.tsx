@@ -10,7 +10,7 @@ import type { CategoryCard } from "@/lib/categories.functions";
 
 export function TemplateCard({ t }: { t: Template }) {
   return (
-    <Link to="/templates/$id" params={{ id: t.id }} className="surface group flex flex-col overflow-hidden p-1.5 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow active:scale-[0.99] sm:p-2">
+    <Link to="/templates/$id" params={{ id: t.id }} data-sound={`tpl_${t.id}`} className="surface group flex flex-col overflow-hidden p-1.5 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow active:scale-[0.99] sm:p-2">
                 <div className="relative aspect-square overflow-hidden rounded-[calc(var(--radius)*1.2)] bg-muted/40">
                   {t.image ? (
                     <SmartImage src={t.image} alt={t.name} className="h-full w-full transition duration-500 group-hover:scale-105" />
@@ -44,7 +44,7 @@ export function TemplateGrid({ list }: { list: Template[] }) {
 
 export function LinkCard({ k }: { k: CategoryCard }) {
   return (
-    <a href={k.link} target="_blank" rel="noopener noreferrer" className="surface group flex flex-col overflow-hidden p-1.5 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow active:scale-[0.99] sm:p-2">
+    <a href={k.link} data-sound={`card_${k.id}`} target="_blank" rel="noopener noreferrer" className="surface group flex flex-col overflow-hidden p-1.5 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow active:scale-[0.99] sm:p-2">
       <div className="relative aspect-square overflow-hidden rounded-[calc(var(--radius)*1.2)] bg-muted/40">
         <SmartImage src={k.image} alt={k.name} className="h-full w-full transition duration-500 group-hover:scale-105" />
       </div>

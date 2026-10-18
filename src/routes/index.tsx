@@ -82,7 +82,7 @@ function Index() {
           searching || categories.length === 0 ? <TemplateGrid list={list} /> : (
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-5 xl:grid-cols-4">
               {categories.map((c) => (
-                <Link key={c.id} to="/category/$id" params={{ id: c.id }} className="surface group flex flex-col overflow-hidden p-1.5 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow active:scale-[0.99] sm:p-2">
+                <Link key={c.id} to="/category/$id" params={{ id: c.id }} data-sound={`cat_${c.id}`} className="surface group flex flex-col overflow-hidden p-1.5 transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-glow active:scale-[0.99] sm:p-2">
                   <div className="relative aspect-square overflow-hidden rounded-[calc(var(--radius)*1.2)] bg-muted/40">
                     {c.image ? <SmartImage src={c.image} alt={c.name} className="h-full w-full transition duration-500 group-hover:scale-105" /> : <div className="grid h-full place-items-center"><FolderOpen className="size-10 text-primary" /></div>}
                   </div>

@@ -67,6 +67,7 @@ function DockLink({ to, label, emoji }: (typeof NAV)[number]) {
       to={dest}
       title={label}
       aria-label={label}
+      data-sound={`nav_${to === "/" ? "home" : to.slice(1)}`}
       aria-current={active ? "page" : undefined}
       className={cn(
         "group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full px-2 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
