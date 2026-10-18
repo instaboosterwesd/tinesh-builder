@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Image as ImageIcon } from "lucide-react";
+import { FolderOpen, Image as ImageIcon } from "lucide-react";
 import { LottieIcon, preloadLottie } from "@/components/effects/LottieIcon";
 import { STICKERS } from "@/lib/stickers";
 import { AppShell } from "@/components/AppShell";
@@ -45,10 +45,11 @@ function Index() {
 
   const searching = q.trim() !== "";
   const byId = useMemo(() => new Map(templates.map((t) => [t.id, t])), [templates]);
-  const rest = useMemo(() => {
-    const used = new Set(categories.flatMap((c) => c.template_ids));
-    return templates.filter((t) => !used.has(t.id));
-  }, [templates, categories]);
+  const [open, setOpen] = useState<string | null>(null);
+  const current = categories.find((c) => c.id === open) ?? categories[0];
+  const currentItems = current
+    ? current.all_templates ? templates : current.template_ids.map((id) => byId.get(id)).filter((t): t is Template => !!t)
+    : [];
 
   return (
     <AppShell search={
@@ -64,7 +65,7 @@ function Index() {
           </div>
     }>
       <section className="relative z-10 mx-auto max-w-7xl px-4 pb-28 pt-5 lg:px-8">
-        {list.length === 0 && (searching || !categories.some((c) => c.cards.length)) ? (
+        {list.length === 0 && (searching || categories.length === 0) ? (
           <div className="surface grid place-items-center p-10 text-center sm:p-14">
             <span className="grid size-16 place-items-center rounded-3xl bg-accent text-accent-foreground shadow-soft">
               <LottieIcon src={templates.length ? STICKERS.search : STICKERS.leaders} className="size-10" />
@@ -84,24 +85,27 @@ function Index() {
           </div>
         ) : (
           searching || categories.length === 0 ? <TemplateGrid list={list} /> : (
-            <div className="space-y-8">
-              {categories.map((c) => {
-                const items = c.template_ids.map((id) => byId.get(id)).filter((t): t is Template => !!t);
-                if (!items.length && !c.cards.length) return null;
-                return (
-                  <div key={c.id}>
-                    <h2 className="mb-3 text-lg font-bold sm:text-xl">{c.name}</h2>
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-5 xl:grid-cols-4">
-                      {items.map((t) => <TemplateCard key={t.id} t={t} />)}
-                      {c.cards.map((k) => <LinkCard key={k.id} k={k} />)}
-                    </div>
-                  </div>
-                );
-              })}
-              {rest.length > 0 && (
+            <div className="space-y-5">
+              <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+                {categories.map((c) => (
+                  <button key={c.id} type="button" onClick={() => setOpen(c.id)} aria-pressed={current?.id === c.id}
+                    className={`surface flex w-24 shrink-0 flex-col items-center gap-1.5 p-2 text-center transition sm:w-28 ${current?.id === c.id ? "ring-2 ring-primary" : "hover:-translate-y-0.5"}`}>
+                    <span className="grid aspect-square w-full place-items-center overflow-hidden rounded-2xl bg-muted/40">
+                      {c.image ? <SmartImage src={c.image} alt="" className="h-full w-full" /> : <FolderOpen className="size-7 text-primary" />}
+                    </span>
+                    <span className="w-full truncate text-xs font-semibold sm:text-sm">{c.name}</span>
+                  </button>
+                ))}
+              </div>
+              {current && (
                 <div>
-                  <h2 className="mb-3 text-lg font-bold sm:text-xl">More templates</h2>
-                  <TemplateGrid list={rest} />
+                  <h2 className="mb-3 text-lg font-bold sm:text-xl">{current.name}</h2>
+                  {currentItems.length || current.cards.length ? (
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-5 xl:grid-cols-4">
+                      {currentItems.map((t) => <TemplateCard key={t.id} t={t} />)}
+                      {current.cards.map((k) => <LinkCard key={k.id} k={k} />)}
+                    </div>
+                  ) : <div className="surface p-8 text-center text-sm text-muted-foreground">Nothing here yet.</div>}
                 </div>
               )}
             </div>

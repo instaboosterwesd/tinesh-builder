@@ -27,6 +27,7 @@ import { HackerLoader, LoadingPanel } from "@/components/effects/HackerLoader";
 import { QueryFeedback } from "@/components/QueryFeedback";
 import { withRequestTimeout } from "@/lib/request-timeout";
 import { CategoriesTab } from "@/components/admin/CategoriesTab";
+import { uploadVideo } from "@/lib/cloudinary";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -514,6 +515,7 @@ function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClo
   const [busy, setBusy] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>(t.image_url ?? "");
   const [videoUrl, setVideoUrl] = useState<string>(t.video_url ?? "");
+  const [videoUploading, setVideoUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>((t as { image?: string | null }).image ?? null);
   const [uploading, setUploading] = useState(false);
   const [htmlName, setHtmlName] = useState("");
@@ -541,7 +543,7 @@ function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClo
         <DialogHeader><DialogTitle>{t.id ? "Edit template" : "New template"}</DialogTitle></DialogHeader>
         <form className="space-y-3" onSubmit={async (e) => {
           e.preventDefault();
-          if (uploading) { toast.error("Wait for the image to finish uploading"); return; }
+          if (uploading) { toast.error("Wait for the upload to finish"); return; }
           setBusy(true);
           try {
             await adminSaveTemplate({ data: { password: pw, id: t.id, ...v, price: Number(v.price), image_url: imageUrl, video_url: videoUrl.trim() } });
@@ -576,8 +578,24 @@ function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClo
           </div>
           <div className="space-y-1.5">
             <p className="text-sm font-semibold">Template video (optional)</p>
-            <Input type="url" placeholder="https://… .mp4 video link" maxLength={300} value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
-            <span className="text-xs text-muted-foreground">Paste a direct MP4 link. It shows on the template page.</span>
+            {videoUrl && <video src={videoUrl} controls muted className="aspect-video w-full rounded-xl bg-muted" />}
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" size="sm" disabled={uploading} asChild>
+                <label className="cursor-pointer">
+                  <Upload className="size-4" /> {videoUploading ? "Uploading video…" : videoUrl ? "Change video" : "Upload video"}
+                  <input type="file" accept="video/*" className="sr-only" disabled={uploading} onChange={async (e) => {
+                    const f = e.target.files?.[0]; e.target.value = "";
+                    if (!f) return;
+                    if (f.size > 100 * 1024 * 1024) { toast.error("Video must be under 100 MB"); return; }
+                    setVideoUploading(true); setUploading(true);
+                    try { setVideoUrl(await uploadVideo(f)); toast.success("Video uploaded"); } catch (x) { err(x); }
+                    setVideoUploading(false); setUploading(false);
+                  }} />
+                </label>
+              </Button>
+              {videoUrl && <Button type="button" variant="ghost" size="sm" onClick={() => setVideoUrl("")}><Trash2 className="size-4" /> Remove</Button>}
+            </div>
+            <span className="text-xs text-muted-foreground">MP4 or other video · max 100 MB. Shows on the template page.</span>
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">

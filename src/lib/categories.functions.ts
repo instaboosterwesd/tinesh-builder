@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { checkPassword, int, str, uuid } from "@/lib/server-helpers";
 
 export type CategoryCard = { id: string; name: string; image: string; link: string; button: string };
-export type Category = { id: string; name: string; order: number; template_ids: string[]; cards: CategoryCard[] };
+export type Category = { id: string; name: string; image: string; order: number; all_templates: boolean; template_ids: string[]; cards: CategoryCard[] };
 
 type Row = Omit<Category, "id"> & { created_at?: string };
 
@@ -14,6 +14,8 @@ function normalize(id: string, r: Partial<Row>): Category {
   return {
     id,
     name: r.name ?? "",
+    image: r.image ?? "",
+    all_templates: r.all_templates === true,
     order: r.order ?? 0,
     template_ids: Array.isArray(r.template_ids) ? r.template_ids : [],
     cards: Array.isArray(r.cards) ? r.cards : [],
@@ -60,6 +62,8 @@ export const adminSaveCategory = createServerFn({ method: "POST" })
       id: d?.["id"] ? uuid(d["id"]) : null,
       fields: {
         name: str(d?.["name"], "Category name", 80),
+        image: d?.["image"] ? httpsUrl(d["image"], "Category photo") : "",
+        all_templates: d?.["all_templates"] === true,
         order: int(d?.["order"] ?? 0, "order", 0, 10_000),
         template_ids: ids,
         cards: cards.map((c) => ({

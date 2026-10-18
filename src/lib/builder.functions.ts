@@ -278,7 +278,7 @@ export const adminSaveTemplate = createServerFn({ method: "POST" })
     const db = await adb();
     const media = {
       ...(data.image_url ? { image_url: data.image_url } : {}),
-      ...(data.video_url ? { video_url: data.video_url } : {}),
+      video_url: data.video_url,
     };
     if (data.id) {
       await db.dbUpdate(`templates/${data.id}`, { ...data.fields, ...media });

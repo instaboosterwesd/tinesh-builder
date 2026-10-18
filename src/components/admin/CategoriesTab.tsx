@@ -21,15 +21,18 @@ export function CategoriesTab({ pw }: { pw: string }) {
     <>
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">Group templates, or add your own link cards. Categories show on the home page.</p>
-        <Button variant="hero" onClick={() => setEdit({ name: "", order: (cats.data?.length ?? 0) + 1, template_ids: [], cards: [] })}><Plus className="size-4" /> New category</Button>
+        <Button variant="hero" onClick={() => setEdit({ name: "", image: "", all_templates: false, order: (cats.data?.length ?? 0) + 1, template_ids: [], cards: [] })}><Plus className="size-4" /> New category</Button>
       </div>
       {cats.isLoading && <LoadingPanel />}
       {cats.data?.length === 0 && <div className="surface mt-3 p-8 text-center text-sm text-muted-foreground">No categories yet.</div>}
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {cats.data?.map((c) => (
           <div key={c.id} className="surface space-y-2 p-4">
-            <div className="flex items-center gap-2"><FolderOpen className="size-4 text-primary" /><b className="truncate">{c.name}</b></div>
-            <p className="text-xs text-muted-foreground">{c.template_ids.length} templates · {c.cards.length} cards</p>
+            <div className="flex items-center gap-3">
+              {c.image ? <img src={c.image} alt="" className="size-12 rounded-xl object-cover" /> : <span className="grid size-12 place-items-center rounded-xl bg-muted"><FolderOpen className="size-5 text-primary" /></span>}
+              <b className="truncate">{c.name}</b>
+            </div>
+            <p className="text-xs text-muted-foreground">{c.all_templates ? "All templates" : `${c.template_ids.length} templates`} · {c.cards.length} cards</p>
             <p className="line-clamp-2 text-xs text-muted-foreground">{c.template_ids.map((id) => names.get(id)).filter(Boolean).join(", ")}</p>
             <div className="flex gap-1.5">
               <Button size="sm" variant="outline" onClick={() => setEdit(c)}><Pencil className="size-4" /> Edit</Button>
@@ -54,20 +57,31 @@ function CategoryDialog({ pw, c, templates, onClose }: {
   const qc = useQueryClient();
   const [name, setName] = useState(c.name ?? "");
   const [order, setOrder] = useState(String(c.order ?? 0));
+  const [image, setImage] = useState(c.image ?? "");
+  const [all, setAll] = useState(c.all_templates ?? false);
   const [ids, setIds] = useState<string[]>(c.template_ids ?? []);
   const [cards, setCards] = useState<CategoryCard[]>(c.cards ?? []);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const toggle = (id: string) => setIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const setCard = (id: string, patch: Partial<CategoryCard>) => setCards((s) => s.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  const toUrl = async (file: File) => {
+    const dataUrl = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsDataURL(file); });
+    return (await adminUploadTemplateImage({ data: { password: pw, filename: file.name, image: dataUrl } })).url;
+  };
+  const uploadCover = async (file?: File) => {
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { toast.error("Image must be under 3 MB"); return; }
+    setUploading("cover");
+    try { setImage(await toUrl(file)); } catch (e) { err(e); }
+    setUploading(null);
+  };
   const upload = async (id: string, file?: File) => {
     if (!file) return;
     if (file.size > 3 * 1024 * 1024) { toast.error("Image must be under 3 MB"); return; }
     setUploading(id);
     try {
-      const dataUrl = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsDataURL(file); });
-      const { url } = await adminUploadTemplateImage({ data: { password: pw, filename: file.name, image: dataUrl } });
-      setCard(id, { image: url });
+      setCard(id, { image: await toUrl(file) });
     } catch (e) { err(e); }
     setUploading(null);
   };
@@ -80,7 +94,7 @@ function CategoryDialog({ pw, c, templates, onClose }: {
           if (uploading) { toast.error("Wait for the image to finish uploading"); return; }
           setBusy(true);
           try {
-            await adminSaveCategory({ data: { password: pw, id: c.id, name, order: Number(order) || 0, template_ids: ids, cards } });
+            await adminSaveCategory({ data: { password: pw, id: c.id, name, image, all_templates: all, order: Number(order) || 0, template_ids: all ? [] : ids, cards } });
             toast.success("Category saved");
             qc.invalidateQueries({ queryKey: ["adm", "categories"] }); qc.invalidateQueries({ queryKey: ["categories"] }); onClose();
           } catch (x) { err(x); }
@@ -90,7 +104,27 @@ function CategoryDialog({ pw, c, templates, onClose }: {
             <Input aria-label="Category name" placeholder="Category name" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
             <Input aria-label="Position" type="number" min={0} className="w-28" placeholder="Position" value={order} onChange={(e) => setOrder(e.target.value)} />
           </div>
-          <section className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border border-input bg-muted/40">
+              {image ? <img src={image} alt="" className="h-full w-full object-cover" /> : <FolderOpen className="size-6 text-muted-foreground" />}
+            </div>
+            <Button type="button" variant="outline" size="sm" asChild disabled={uploading === "cover"}>
+              <label className="cursor-pointer">
+                <Upload className="size-4" /> {uploading === "cover" ? "Uploading…" : image ? "Change category photo" : "Category photo"}
+                <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => { uploadCover(e.target.files?.[0]); e.target.value = ""; }} />
+              </label>
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            {([["none", "No templates"], ["pick", "Pick templates"], ["all", "All templates"]] as const).map(([k, label]) => {
+              const on = k === "all" ? all : k === "pick" ? !all && ids.length > 0 : !all && ids.length === 0;
+              return (
+                <button key={k} type="button" className={`rounded-xl border px-3 py-2 font-medium ${on ? "border-primary bg-accent" : "border-input"}`}
+                  onClick={() => { setAll(k === "all"); if (k === "none") setIds([]); if (k === "pick" && !ids.length && templates[0]) setIds([templates[0].id]); }}>{label}</button>
+              );
+            })}
+          </div>
+          {!all && ids.length > 0 && <section className="space-y-2">
             <p className="text-sm font-semibold">Templates in this category ({ids.length})</p>
             {templates.length === 0 && <p className="text-xs text-muted-foreground">No templates yet.</p>}
             <div className="grid max-h-60 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
@@ -102,7 +136,7 @@ function CategoryDialog({ pw, c, templates, onClose }: {
                 </label>
               ))}
             </div>
-          </section>
+          </section>}
           <section className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold">Link cards ({cards.length})</p>
