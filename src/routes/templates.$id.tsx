@@ -47,7 +47,7 @@ function TemplatePage() {
   const { data: t } = useSuspenseQuery(templateQuery(id));
   const [open, setOpen] = useState(false);
   if (!t) return null;
-  const hasPreview = t.show_preview && !!t.html;
+  const hasPreview = t.show_preview && !!t.preview_html;
   // When a live preview exists, show only it (no photo tab).
   const showImage = !!t.image && !hasPreview;
   const defaultTab = hasPreview ? "html" : t.video ? "video" : "image";
@@ -64,7 +64,7 @@ function TemplatePage() {
             <Tabs defaultValue={defaultTab}>
               <TabsList>
                 {t.video && <TabsTrigger value="video"><PlayCircle className="size-4" /> Video</TabsTrigger>}
-                {t.image && <TabsTrigger value="image"><ImageIcon className="size-4" /> Photo</TabsTrigger>}
+                {showImage && <TabsTrigger value="image"><ImageIcon className="size-4" /> Photo</TabsTrigger>}
                 {hasPreview && <TabsTrigger value="html"><Code2 className="size-4" /> Live preview</TabsTrigger>}
               </TabsList>
               {t.video && (
@@ -72,14 +72,14 @@ function TemplatePage() {
                   <video src={t.video} controls autoPlay muted loop className="aspect-video w-full rounded-2xl border border-border bg-card" />
                 </TabsContent>
               )}
-              {t.image && (
+              {showImage && t.image && (
                 <TabsContent value="image">
                   <SmartImage src={t.image} alt={t.name} lazy={false} className="aspect-video w-full rounded-2xl border border-border" />
                 </TabsContent>
               )}
               {hasPreview && (
                 <TabsContent value="html">
-                  <iframe title="preview" srcDoc={t.html} sandbox="allow-scripts" className="h-[520px] w-full rounded-2xl border border-border bg-card sm:h-[640px]" />
+                  <iframe title="preview" srcDoc={t.preview_html} sandbox="allow-scripts" className="h-[520px] w-full rounded-2xl border border-border bg-card sm:h-[640px]" />
                 </TabsContent>
               )}
             </Tabs>

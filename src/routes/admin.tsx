@@ -514,7 +514,7 @@ function Templates({ pw }: { pw: string }) {
 
 function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClose: () => void }) {
   const qc = useQueryClient();
-  const [v, setV] = useState({ name: t.name ?? "", description: t.description ?? "", base_apk: t.base_apk ?? "bingo", price: String(t.price ?? 0), html: t.html ?? "", show_preview: t.show_preview ?? true });
+  const [v, setV] = useState({ name: t.name ?? "", description: t.description ?? "", base_apk: t.base_apk ?? "bingo", price: String(t.price ?? 0), html: t.html ?? "", preview_html: t.preview_html ?? "", show_preview: t.show_preview ?? true });
   const [busy, setBusy] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>(t.image_url ?? "");
   const [videoUrl, setVideoUrl] = useState<string>(t.video_url ?? "");
@@ -522,6 +522,7 @@ function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClo
   const [preview, setPreview] = useState<string | null>((t as { image?: string | null }).image ?? null);
   const [uploading, setUploading] = useState(false);
   const [htmlName, setHtmlName] = useState("");
+  const [previewHtmlName, setPreviewHtmlName] = useState("");
   const set = (k: keyof typeof v) => (e: { target: { value: string } }) => setV({ ...v, [k]: e.target.value });
   const pickImage = async (file?: File) => {
     if (!file) return;
@@ -535,10 +536,14 @@ function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClo
     } catch (x) { err(x); setPreview(null); }
     setUploading(false);
   };
-  const pickHtml = async (file?: File) => {
+  const pickHtml = async (file?: File, field: "html" | "preview_html" = "html") => {
     if (!file) return;
-    const text = await file.text();
-    setV((s) => ({ ...s, html: text })); setHtmlName(file.name);
+    try {
+      const text = await file.text();
+      setV((s) => ({ ...s, [field]: text }));
+      if (field === "html") setHtmlName(file.name);
+      else setPreviewHtmlName(file.name);
+    } catch (x) { err(x); }
   };
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -602,7 +607,7 @@ function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClo
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold">HTML</p>
+              <p className="text-sm font-semibold">Build HTML</p>
               <Button type="button" variant="outline" size="sm" asChild>
                 <label className="cursor-pointer">
                   <FileCode className="size-4" /> {htmlName ? "Change HTML file" : "Select HTML file"}
@@ -612,6 +617,19 @@ function TemplateDialog({ pw, t, onClose }: { pw: string; t: Partial<Tpl>; onClo
             </div>
             {htmlName && <p className="truncate text-xs text-muted-foreground">Loaded: {htmlName}</p>}
             <Textarea placeholder="Paste HTML or select a file" value={v.html} onChange={set("html")} rows={8} className="font-mono text-xs" required />
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold">Preview HTML (optional)</p>
+              <Button type="button" variant="outline" size="sm" asChild>
+                <label className="cursor-pointer">
+                  <FileCode className="size-4" /> {previewHtmlName ? "Change Preview HTML file" : "Select Preview HTML file"}
+                  <input type="file" aria-label="Preview HTML file" accept=".html,.htm,text/html" className="sr-only" onChange={(e) => { pickHtml(e.target.files?.[0], "preview_html"); e.target.value = ""; }} />
+                </label>
+              </Button>
+            </div>
+            {previewHtmlName && <p className="truncate text-xs text-muted-foreground">Loaded: {previewHtmlName}</p>}
+            <Textarea aria-label="Preview HTML" placeholder="Paste Preview HTML or select a file" value={v.preview_html} onChange={set("preview_html")} rows={8} className="font-mono text-xs" />
           </div>
           <label className="flex items-center justify-between text-sm">Show live preview to users <Switch checked={v.show_preview} onCheckedChange={(c) => setV({ ...v, show_preview: c })} /></label>
           <Button variant="hero" className="w-full" disabled={busy}>{busy ? <HackerLoader compact label="Saving template" /> : "Save template"}</Button>

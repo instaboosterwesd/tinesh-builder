@@ -20,6 +20,7 @@
 - [x] Verify Windows video playback, signed-out navigation persistence, admin entry, and mobile image fallback. Account-only page checks remain unavailable until sign-in is configured.
 
 ## Current
+- [x] Add separate Preview HTML for new/existing templates; real admin add/edit and visitor preview verified, 14 targeted tests pass; APK callback still uses original build HTML.
 - [x] Compare manual-edit base with workflow APK; restore supplied Universal base, preserve protected archive entries, correct package authorities, run six regression tests and rebuild locally. Pushed apk-builder commit 4627dd7d36b7 and verified remote files.
 - [ ] Verify the latest signed workflow APK on Android and reproduce the user's exact failure. Blocked: failing signed APK/device error not supplied; local unsigned archive checks do not establish runtime success.
 - [x] Inspect supplied Universal APK and fix apk-builder patch scope, saved-ID requirement and preservation of unrelated text/assets; six regression tests passed. Real user new-build/rebuild runtime verification remains open above.

@@ -24,5 +24,6 @@
 
 - Media pointers (/__l5e/...) are proxied in src/server.ts to the Lovable project host when the app runs off Lovable hosting (Vercel); without it all images/videos 404 there.
 - Base-app behaviour (App ID vs register link, which asset receives template HTML) is config-driven: base-apks.ts flags in this app and bases/<id>.json html_targets in the apk-builder repo.
+- Store preview_html separately from build html; public detail responses expose only enabled preview HTML with legacy fallback, while authorized build callbacks use html exclusively to prevent preview edits changing APK behavior.
 - Universal APK workflows must preserve opaque code and non-target archive entries from the working base and keep package-scoped authorities consistent without rewriting component classes; archive checks do not substitute for installed-device verification.
 - Universal registration uses a server-only Firebase writer behind the app's build authorization, with conditional ID reservation; use only a dedicated Universal credential when configured, otherwise the registration database's existing public rules, never the unrelated app credential. Persist app_id before dispatch so retries reuse the record.

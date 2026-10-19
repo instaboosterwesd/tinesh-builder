@@ -7,7 +7,7 @@ import { randomPackageName } from "@/lib/package-name";
 import { splitRegisterLink } from "@/lib/universal-registration";
 
 type TemplateRow = {
-  id: string; name: string; description: string; category: string; base_apk: string; html: string;
+  id: string; name: string; description: string; category: string; base_apk: string; html: string; preview_html?: string;
   image_url: string | null; video_url: string | null; price: number; show_preview: boolean; created_at: string;
 };
 
@@ -31,7 +31,8 @@ async function signTemplates(rows: TemplateRow[], includeHtml: boolean) {
     rows.map(async (r) => ({
       ...r,
       // Hide HTML from visitors when the admin switched the live preview off.
-      html: includeHtml || r.show_preview ? r.html : "",
+      html: includeHtml ? r.html : "",
+      preview_html: includeHtml ? r.preview_html ?? "" : r.show_preview ? r.preview_html || r.html : "",
       image: await signPath(r.image_url),
       video: await signPath(r.video_url),
     })),
@@ -47,7 +48,7 @@ export const listTemplates = createServerFn({ method: "GET" }).handler(async () 
     const db = await adb();
     const rec = await db.dbGet<Record<string, Omit<TemplateRow, "id">>>("templates");
     const rows = keyed(rec).sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
-    return await signTemplates(rows.map((r) => ({ ...r, html: "" })), false);
+    return await signTemplates(rows.map((r) => ({ ...r, html: "", preview_html: "" })), false);
   } catch (e) {
     // Public home page must still render when the backend key is missing/invalid.
     console.error("listTemplates failed:", e instanceof Error ? e.message : e);
@@ -252,6 +253,7 @@ function templateFields(d: Record<string, unknown>) {
     description: str(d?.["description"], "Description", 1000, false),
     base_apk: b,
     html: str(d?.["html"], "HTML", 500_000),
+    ...(d?.["preview_html"] !== undefined ? { preview_html: str(d["preview_html"], "Preview HTML", 500_000, false) } : {}),
     price: int(d?.["price"], "price", 0, 1_000_000),
     show_preview: d?.["show_preview"] !== false,
   };
