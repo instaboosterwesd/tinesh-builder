@@ -1,3 +1,4 @@
+import { ArrowLeft, ArrowRight, BadgeCheck, Bell, Calculator, CalendarDays, ChartColumn, CircleCheck, Coins, Copy, Crown, Download, Flame, Gift, Hand, History, House, IndianRupee, Key, KeyRound, Landmark, Lock, LogOut, MapPin, Package, Pencil, Plus, QrCode, Receipt, RefreshCw, Save, Search, Send, Settings, ShieldCheck, ShoppingCart, Smartphone, SmartphoneNfc, Tag, TrendingUp, TriangleAlert, User, UserPen, Wallet, X, Zap, type LucideIcon } from "lucide-react";
 const ICON_BASE = "https://reversebypass.store/icons/new/";
 // Animated stickers (Lottie) used across the app.
 // One module so every sticker stays matched to the thing it labels.
@@ -65,4 +66,66 @@ export type StickerName = keyof typeof STICKERS;
 
 export function stickerUrl(name: StickerName) {
   return STICKERS[name];
+}
+
+// Plain icon stand-ins shown instead of the animated stickers on low devices.
+export const STICKER_ICON: Record<StickerName, LucideIcon> = {
+  home: House,
+  wallet: Wallet,
+  orders: Package,
+  leaders: Crown,
+  profile: User,
+  search: Search,
+  video: Gift,
+  addFunds: Plus,
+  balance: Coins,
+  rupee: IndianRupee,
+  bank: Landmark,
+  qrHint: QrCode,
+  chooseAmount: Calculator,
+  minDeposit: TriangleAlert,
+  customAmount: Pencil,
+  send: Send,
+  copy: Copy,
+  track: MapPin,
+  download: Download,
+  refresh: RefreshCw,
+  history: History,
+  historyTitle: Receipt,
+  editProfile: UserPen,
+  editTitle: Tag,
+  save: Save,
+  logout: LogOut,
+  lock: Lock,
+  telegram: Send,
+  welcome: Hand,
+  welcomeYoda: Hand,
+  flame: Flame,
+  google: KeyRound,
+  shield: ShieldCheck,
+  proceed: ArrowRight,
+  verified: CircleCheck,
+  verifiedBadge: BadgeCheck,
+  close: X,
+  back: ArrowLeft,
+  bell: Bell,
+  cart: ShoppingCart,
+  today: CalendarDays,
+  todaySales: TrendingUp,
+  monthlySales: ChartColumn,
+  key: Key,
+  activeKeys: KeyRound,
+  apiSettings: Settings,
+  phone: Smartphone,
+  phoneArrow: SmartphoneNfc,
+  sendFlash: Zap,
+};
+
+const iconByUrl = new Map<string, LucideIcon>(
+  (Object.keys(STICKERS) as StickerName[]).map((name) => [STICKERS[name], STICKER_ICON[name]]),
+);
+
+/** Plain icon for a sticker URL, or undefined when the src is not a known sticker. */
+export function stickerIconFor(src: string): LucideIcon | undefined {
+  return iconByUrl.get(src);
 }

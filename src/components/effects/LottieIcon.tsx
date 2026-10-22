@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { AnimationItem } from "lottie-web";
+import { getDevicePerformance, useDevicePerformance } from "@/lib/device-performance";
+import { stickerEmojiFor } from "@/lib/stickers";
 
 // Shared caches so each emoji file and the player are fetched only once.
 let lottiePromise: Promise<typeof import("lottie-web")> | null = null;
@@ -30,13 +32,17 @@ function loadData(src: string) {
 
 /** Start downloading emojis early (call in browser effects). */
 export function preloadLottie(srcs: string[]) {
+  if (getDevicePerformance() === "low") return;
   loadLottie().catch(() => {});
   srcs.forEach((s) => loadData(s).catch(() => {}));
 }
 
 export function LottieIcon({ src, className = "size-6" }: { src: string; className?: string }) {
+  const performance = useDevicePerformance();
+  const Icon = performance === "low" ? stickerIconFor(src) : undefined;
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
+    if (Icon || getDevicePerformance() === "low") return;
     let active = true;
     let animation: AnimationItem | undefined;
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -48,6 +54,13 @@ export function LottieIcon({ src, className = "size-6" }: { src: string; classNa
     const update = () => { if (motion.matches) animation?.pause(); else animation?.play(); };
     motion.addEventListener("change", update);
     return () => { active = false; animation?.destroy(); motion.removeEventListener("change", update); };
-  }, [src]);
-  return <span ref={ref} aria-hidden="true" className={`inline-block shrink-0 ${className}`} />;
+  }, [src, Icon]);
+  if (Icon) {
+    return (
+      <span key="icon" aria-hidden="true" className={`inline-grid shrink-0 place-items-center text-primary ${className}`}>
+        <Icon className="size-[80%]" strokeWidth={2.2} />
+      </span>
+    );
+  }
+  return <span key="lottie" ref={ref} aria-hidden="true" className={`inline-block shrink-0 ${className}`} />;
 }

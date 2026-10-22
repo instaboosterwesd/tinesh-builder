@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Camera, LifeBuoy, Monitor } from "lucide-react";
+import { Camera, LifeBuoy, Monitor, Smartphone, Zap } from "lucide-react";
 import { LottieIcon, preloadLottie } from "@/components/effects/LottieIcon";
 import { STICKERS } from "@/lib/stickers";
 import { AppShell, PageHeader, RequireAuth, useWallet } from "@/components/AppShell";
@@ -20,6 +20,7 @@ import { HackerLoader } from "@/components/effects/HackerLoader";
 import { QueryFeedback } from "@/components/QueryFeedback";
 import { withRequestTimeout } from "@/lib/request-timeout";
 import { useAuth } from "@/hooks/useAuth";
+import { setDevicePerformance, useDevicePerformance, type DevicePerformance } from "@/lib/device-performance";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -70,6 +71,7 @@ function ProfileBody() {
   const buildsQuery = useQuery({ queryKey: ["my-builds", user?.uid], queryFn: () => withRequestTimeout(() => fetchBuilds()), retry: false });
   const { data: builds } = buildsQuery;
   const { data: settings } = useQuery({ queryKey: ["site-settings"], queryFn: () => getSiteSettings() });
+  const performance = useDevicePerformance();
 
   const [name, setName] = useState("");
   const [telegram, setTelegram] = useState("");
@@ -221,6 +223,29 @@ function ProfileBody() {
         <Button variant="secondary" onClick={onPassword} disabled={pwBusy || !pw}>
           {pwBusy ? <HackerLoader compact label="Updating password" /> : "Update password"}
         </Button>
+      </section>
+
+      <section className="surface space-y-4 p-5">
+        <h3 className="flex items-center gap-2 font-semibold"><Smartphone className="size-5 text-primary" /> Device performance</h3>
+        <p className="text-sm text-muted-foreground">Low shows simple icons (lighter); High shows premium animated stickers.</p>
+        <div className="grid grid-cols-2 gap-3">
+          {([
+            { value: "low", label: "Low", hint: "Simple icons", icon: Smartphone },
+            { value: "high", label: "High", hint: "Animated stickers", icon: Zap },
+          ] as { value: DevicePerformance; label: string; hint: string; icon: typeof Smartphone }[]).map(({ value, label, hint, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => { setDevicePerformance(value); toast.success(`Device set to ${label}`); }}
+              aria-pressed={performance === value}
+              className={`clay-inset flex flex-col items-center gap-1 rounded-2xl px-4 py-3 transition hover:-translate-y-0.5 ${performance === value ? "ring-2 ring-primary" : ""}`}
+            >
+              <Icon className="size-5 text-primary" />
+              <span className="font-semibold">{label}</span>
+              <span className="text-xs text-muted-foreground">{hint}</span>
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="surface space-y-3 p-5">
