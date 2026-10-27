@@ -20,6 +20,7 @@
 - [x] Verify Windows video playback, signed-out navigation persistence, admin entry, and mobile image fallback. Account-only page checks remain unavailable until sign-in is configured.
 
 ## Current
+- [x] Add uploaded APK as Universal Back Fix using shared Universal registration and direct patching. Real admin add/edit/read-back verified and temporary template deleted; 65 app tests and 21 APK tests pass. GitHub app/builder changes prepared with backups; installed Android and Telegram delivery remain unverified.
 - [x] Device performance choice: one-time low/high dialog for new visitors, low mode shows plain emojis instead of animated stickers, profile page toggle to change it. 53 tests pass; dialog, low-mode emojis and high-mode animated stickers verified in browser. Signed-in profile toggle not exercised (no session).
 - [x] Update Universal APK assets/logo.png using the selected build logo at original dimensions; 13 APK regression tests pass, non-target archive contents preserved, pushed and verified apk-builder/main fcaed2129c08 with backup. Build/sign/upload/report workflow unchanged; actual signed APK/device and Telegram delivery not exercised.
 - [x] Add separate Preview HTML for new/existing templates; real admin add/edit and visitor preview verified, 14 targeted tests pass; APK callback still uses original build HTML.

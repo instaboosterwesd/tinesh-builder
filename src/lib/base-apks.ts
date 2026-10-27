@@ -4,6 +4,7 @@ export const BASE_APKS = [
   { id: "bingo", label: "Wingo", needsAppId: false },
   { id: "ab", label: "Aviator", needsAppId: false },
   { id: "teacher", label: "Universal", needsAppId: true },
+  { id: "universal_back_fix", label: "Universal Back Fix", needsAppId: true },
 ] as const;
 export type BaseApkId = (typeof BASE_APKS)[number]["id"];
 export const baseApkLabel = (id: string) => BASE_APKS.find((b) => b.id === id)?.label ?? id.toUpperCase();

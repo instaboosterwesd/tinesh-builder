@@ -25,12 +25,14 @@ vi.mock("@/lib/universal-registration.server", () => ({ createUniversalRegistrat
 vi.mock("@/lib/dispatch.server", () => ({ dispatchBuild: state.dispatch }));
 
 import { adminBuild, userBuild } from "@/lib/builder.functions";
+import { createUniversalRegistration } from "@/lib/universal-registration.server";
+import { baseNeedsAppId } from "@/lib/base-apks";
 
 beforeEach(() => { vi.clearAllMocks(); vi.spyOn(Math, "random").mockReturnValue(0.95); });
 afterEach(() => vi.restoreAllMocks());
 
 describe("Server build package policy", () => {
-  for (const base of ["teacher", "bingo", "ab"]) {
+  for (const base of ["teacher", "universal_back_fix", "bingo", "ab"]) {
     for (const role of ["user", "admin"]) {
       it(`${role} ${base} ignores client package names and persists the random allowed package before dispatch`, async () => {
         state.base = base;
@@ -39,6 +41,19 @@ describe("Server build package policy", () => {
         expect(state.writes.mock.calls[0]?.[1]).toMatchObject({ package_name: "com.tineshmod.a10" });
         expect(state.dispatch.mock.calls[0]?.[0]).toMatchObject({ package_name: "com.tineshmod.a10" });
         expect(state.writes.mock.invocationCallOrder[0]).toBeLessThan(state.dispatch.mock.invocationCallOrder[0] ?? 0);
+      });
+      it(`${role} ${base} preserves its configured registration behavior`, async () => {
+        state.base = base;
+        const build = role === "user" ? userBuild : adminBuild;
+        await build({ data: { template_id: "template-1", app_name: "My App", logo_path: "logos/test.png", register_link: "https://example.com/register", password: "test-only" } });
+        if (baseNeedsAppId(base)) {
+          expect(createUniversalRegistration).toHaveBeenCalledWith(expect.objectContaining({ name: "My App", image: "https://example.com/logo.png", registerLink: "https://example.com/register" }));
+          expect(state.writes.mock.calls[0]?.[1]).toMatchObject({ app_id: "abcd2345", app_name: "My App", logo_path: "logos/test.png" });
+          expect(state.dispatch.mock.calls[0]?.[0]).toMatchObject({ app_id: "abcd2345", app_name: "My App", logo_path: "logos/test.png" });
+        } else {
+          expect(createUniversalRegistration).not.toHaveBeenCalled();
+          expect(state.dispatch.mock.calls[0]?.[0]).toMatchObject({ app_id: null });
+        }
       });
     }
   }
